@@ -18,6 +18,8 @@ Reservoir user activity does not establish the wallet's actual gas and all other
 
 **Verification boundary:** Endpoint parameters and chain hosts were checked against Reservoir's public documentation on 2026-10-21. This environment could not resolve the API host, and no API key was available, so live response shape and live chain coverage have not yet been verified. Tests currently use a clearly marked synthetic contract fixture, not a recorded API response. Replace/add sanitized recordings and run a credentialed live scan before claiming production data accuracy.
 
+Robinhood Chain and Arc are **not** Reservoir scan targets in this app. Their official RPC endpoints provide blockchain calls but do not by themselves supply a validated history of NFT purchases, sales, mints, fees, or currency conversions. Scan requests for either return an explicit 503 until a chain-specific indexed activity adapter is implemented and tested.
+
 ## Legacy normalized provider
 
 Live scanning is **unconfigured by default**. Set `SENTINEL_PROVIDER_URL` to a trusted HTTPS endpoint under your control and `SENTINEL_PROVIDER_API_KEY` to its server-side key. Do not place either in a `NEXT_PUBLIC_` variable. This app does not call the reference website's private APIs.

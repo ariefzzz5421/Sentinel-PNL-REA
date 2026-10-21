@@ -13,6 +13,8 @@ npm.cmd run dev
 
 Open `http://127.0.0.1:3000`. Manual trade entry and CSV import work without credentials through **My ledger**. Data is saved in browser local storage. Use **Export CSV** to retain a portable copy.
 
+You can paste a `0x` address or ENS name without connecting a wallet. ENS names resolve on Ethereum mainnet through the server; set `ENS_RPC_URL` for a dedicated resolver RPC. Optional Privy wallet login and the connected-wallet profile activate when `NEXT_PUBLIC_PRIVY_APP_ID` is set to your own Privy app ID. Configure your allowed domains in Privy. The profile filters the existing browser ledger by a linked wallet; it does not sync data to an account. See [chain and wallet setup](docs/CHAIN_CONFIGURATION.md).
+
 For optional Reservoir scanning, copy `.env.example` to `.env.local`, set `RESERVOIR_API_KEY` to your own key, then restart the server. The adapter uses Reservoir's official user activity endpoint for Ethereum, Base, and Arbitrum. A legacy normalized provider remains available as a fallback. See [docs/API_PROVIDERS.md](docs/API_PROVIDERS.md). Live response mapping is pending verification with a sanitized recorded API response and a credentialed scan.
 
 ## CSV format
@@ -38,5 +40,6 @@ example-sell,2026-02-01T00:00:00Z,ethereum,0x00000000000000000000000000000000000
 - [PnL methodology](docs/PNL_METHODOLOGY.md)
 - [Data provider contract](docs/API_PROVIDERS.md)
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Chain and wallet setup](docs/CHAIN_CONFIGURATION.md)
 
-No wallet connection, signing, private key, or transaction execution exists in this application. All displayed PnL is an estimate and is not financial or tax advice.
+Wallet connection is optional. No transaction signing, private key export, or transaction execution is implemented. All displayed PnL is an estimate and is not financial or tax advice.

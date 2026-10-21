@@ -4,6 +4,8 @@
 
 ETH-denominated, one-token NFT (`ERC-721` style) buy, mint, and sell events on Ethereum, Base, and Arbitrum. The app does not infer trades from transfers. Manual events have an amount and explicit fee in ETH. Reservoir activity events have a verified ETH/native or WETH price but **unknown gas/transaction fees**; `feeKnown: false` preserves that fact. Decimal.js is used for monetary arithmetic; JavaScript binary floats are used only to render chart coordinates.
 
+Robinhood Chain and Arc are network configuration options only. Neither is included in PnL or manual CSV because no compatible NFT activity adapter has been verified. Arc uses USDC for gas, so its amounts must not be represented as ETH.
+
 ## Matching and formulas
 
 Events sort by ISO timestamp then event ID. Position identity is chain + contract + token ID + wallet. If contract is absent, the collection name substitutes as a weaker identity. A buy or mint records `cost = amount + acquisition fee`. A sell closes the position. `net proceeds = sale amount − sale fee`; `realized PnL = net proceeds − cost`. All quantities remain ETH strings until display rounding.

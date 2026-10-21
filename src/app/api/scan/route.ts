@@ -16,7 +16,10 @@ export async function POST(request: Request) {
         { error: "Request too large." },
         { status: 413 },
       );
-    const input = parseScanRequest(await request.json());
+    const body: unknown = await request.json();
+    if (body && typeof body === "object" && "chain" in body && (body.chain === "robinhood" || body.chain === "arc"))
+      return NextResponse.json({ error: `${body.chain === "arc" ? "Arc" : "Robinhood Chain"} NFT activity scanning is not configured. A compatible indexed activity API is required; RPC alone does not provide complete trades or PnL.` }, { status: 503 });
+    const input = parseScanRequest(body);
     const peer =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     const key = `${peer}:${input.address.toLowerCase()}`;

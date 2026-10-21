@@ -30,13 +30,13 @@ import {
   X,
 } from "lucide-react";
 import { parseTradeCsv, toTradeCsv } from "@/lib/import-export";
+import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import {
   addressSchema,
   chainSchema,
   eventSchema,
   eventsSchema,
-  parseWallets,
   type Chain,
   type TradeEvent,
 } from "@/lib/schema";
@@ -310,13 +310,16 @@ export function Dashboard() {
   }
   async function scan() {
     let wallets: string[];
+    setBusy(true);
+    notice("Resolving wallet inputs…");
     try {
-      wallets = parseWallets(walletInput);
+      wallets = (await resolveWalletInput(walletInput, chain)).addresses;
     } catch (error) {
       notice(
         error instanceof Error ? error.message : "Invalid wallet list.",
         "error",
       );
+      setBusy(false);
       return;
     }
     const contract = contractInput.trim()
@@ -324,6 +327,7 @@ export function Dashboard() {
       : null;
     if (scanMode !== "wallet" && (!contract || !contract.success)) {
       notice("Enter a valid collection contract address.", "error");
+      setBusy(false);
       return;
     }
     setBusy(true);
@@ -402,10 +406,11 @@ export function Dashboard() {
     try {
       if (file.size > 25_000) throw new Error("Wallet list exceeds 25 KB.");
       const contents = await file.text();
-      const wallets = parseWallets(contents);
+      const wallets = contents.split(/[\s,;]+/).filter(Boolean);
+      if (!wallets.length || wallets.length > 100) throw new Error("Use 1 to 100 wallet inputs.");
       setWalletInput(wallets.join("\n"));
       notice(
-        `Loaded ${wallets.length} wallet address${wallets.length === 1 ? "" : "es"} from .txt.`,
+        `Loaded ${wallets.length} wallet input${wallets.length === 1 ? "" : "s"} from .txt.`,
         "success",
       );
     } catch (error) {
@@ -556,11 +561,11 @@ export function Dashboard() {
                 <option value="arbitrum">Arbitrum</option>
               </select>
               <textarea
-                aria-label="Wallet addresses"
+                aria-label="Wallet addresses or ENS names"
                 rows={2}
                 value={walletInput}
                 onChange={(e) => setWalletInput(e.target.value)}
-                placeholder="0x… one wallet address per line"
+                placeholder="0x… or name.eth, one per line"
               />
               <button
                 className="scan-button"

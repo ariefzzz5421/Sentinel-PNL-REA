@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { OptionalPrivyProvider } from "@/components/privy-provider";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -15,7 +16,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={`${geist.variable} ${mono.variable}`}>{children}</body>
+      <body className={`${geist.variable} ${mono.variable}`}><OptionalPrivyProvider appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID}>{children}</OptionalPrivyProvider></body>
     </html>
   );
 }

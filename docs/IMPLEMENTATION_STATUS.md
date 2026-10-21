@@ -9,6 +9,8 @@
 - Downloadable PNG performance card created from ledger data.
 - Official Reservoir user activity v6 adapter for Ethereum, Base, and Arbitrum hosts, plus the existing normalized-provider fallback; server-side key, bounded pagination, deduplication, unsupported-currency and missing-price exclusion, and partial coverage warnings.
 - Validated server-side scan API with explicit loading/error states; up to 100 pasted or `.txt` wallet addresses are accepted for a bounded batch scan.
+- Sentinel Bot logo for the site, Robinhood Chain and Arc network selectors with recognizable network marks and verified network metadata; those two scans fail closed until indexed NFT data integration exists.
+- Server-side ENS resolution for pasted names, with chain-specific record lookup and Ethereum-record fallback. Optional Privy wallet login and connected-wallet local profile are integrated behind a public app ID.
 
 ## Conditional / not claimed live
 
@@ -16,6 +18,14 @@
 - Ethereum, Base, and Arbitrum endpoint hosts were verified against Reservoir documentation; live response behavior on each chain remains unverified. Solana is deferred because its address and NFT trade models need a separate validated adapter.
 - Unrealized PnL is unavailable because no verified current valuation source is configured.
 - Authenticated accounts and multi-wallet server persistence are not implemented. Reservoir continuation pagination is implemented, bounded to 25 pages.
+- Privy login requires `NEXT_PUBLIC_PRIVY_APP_ID` and an allowed domain; no app ID was supplied for a live login test. The profile reads this browser's ledger only and is not a cloud account. Robinhood/Arc NFT scanning needs verified data adapters; Arc also needs USDC-aware accounting.
+
+## 2026-10-21 wallet, ENS, and chain update
+
+- The new `/api/resolve-ens` route and viem resolver were added, with three unit tests for normalization, chain-record fallback, and unresolved names. The production route resolved `vitalik.eth` to its public Ethereum address through the default RPC. A production browser run used the live ENS route, then reached the existing scan API and displayed its honest unconfigured-provider error. A separate mocked resolver browser run covered deterministic UI behavior.
+- The optional Privy SDK is installed with Ethereum, Base, Arbitrum, Robinhood Chain, and Arc network definitions. Actual authentication is unverified without a Privy app ID.
+- Production dependency audit after a targeted `ws` override reports 0 high and 0 critical production advisories; moderate transitive advisories remain. The integration has a sizeable client dependency cost when configured.
+- `npm.cmd test`: 19/19 passed; lint, strict typecheck, and production build passed. Playwright checked scanner overflow at 1440, 1024, 768, and 390 px; Robinhood/Arc unavailable states and the unconfigured profile at 1440, 768, and 390 px; and the existing synthetic Scan → API response → PnL dashboard flow.
 
 ## 2026-10-21 verification of approved change set
 

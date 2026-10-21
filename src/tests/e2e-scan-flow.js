@@ -11,7 +11,7 @@ async (page) => {
   await page.context().unroute("**/api/scan");
   await page.context().route("**/api/scan", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(fixture) }));
   await page.goto("http://127.0.0.1:3002/");
-  await page.getByRole("textbox", { name: "Wallet addresses" }).fill("0x000000000000000000000000000000000000dEaD");
+  await page.getByRole("textbox", { name: "Wallet addresses or ENS names" }).fill("0x000000000000000000000000000000000000dEaD");
   await page.getByRole("button", { name: "Scan", exact: true }).click();
   await page.waitForURL("**/dashboard");
   await page.getByText("REALIZED PNL ESTIMATE").first().waitFor({ state: "visible" });
