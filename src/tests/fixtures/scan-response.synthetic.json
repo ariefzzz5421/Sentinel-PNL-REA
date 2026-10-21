@@ -1,0 +1,32 @@
+{
+  "events": [
+    {
+      "id": "reservoir:ethereum:buy-1",
+      "date": "2026-01-01T00:00:00.000Z",
+      "chain": "ethereum",
+      "wallet": "0x000000000000000000000000000000000000dead",
+      "collection": "Orbit",
+      "contract": "0x0000000000000000000000000000000000000001",
+      "tokenId": "7",
+      "type": "buy",
+      "amountEth": "1",
+      "feeEth": "0",
+      "feeKnown": false
+    },
+    {
+      "id": "reservoir:ethereum:sale-1",
+      "date": "2026-03-01T00:00:00.000Z",
+      "chain": "ethereum",
+      "wallet": "0x000000000000000000000000000000000000dead",
+      "collection": "Orbit",
+      "contract": "0x0000000000000000000000000000000000000001",
+      "tokenId": "7",
+      "type": "sell",
+      "amountEth": "1.5",
+      "feeEth": "0",
+      "feeKnown": false
+    }
+  ],
+  "partial": false,
+  "warning": "Gas and other transaction fees are unavailable; PnL is an estimate."
+}

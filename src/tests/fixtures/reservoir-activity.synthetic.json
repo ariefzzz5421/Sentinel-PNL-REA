@@ -1,0 +1,71 @@
+{
+  "_notice": "Synthetic contract fixture modeled on the documented users/activity/v6 fields. NOT a recorded API response.",
+  "pages": [
+    {
+      "activities": [
+        {
+          "id": "sale-1",
+          "type": "sale",
+          "eventTimestamp": 1772323200,
+          "txHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "fromAddress": "0x000000000000000000000000000000000000dEaD",
+          "toAddress": "0x0000000000000000000000000000000000000002",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "7", "collection": { "name": "Orbit" } },
+          "price": { "currency": { "contract": "0x0000000000000000000000000000000000000000", "decimals": 18 }, "amount": { "raw": "1500000000000000000", "native": 1.5 } }
+        },
+        {
+          "id": "buy-1",
+          "type": "sale",
+          "eventTimestamp": 1767225600,
+          "txHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "fromAddress": "0x0000000000000000000000000000000000000002",
+          "toAddress": "0x000000000000000000000000000000000000dEaD",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "7", "collection": { "name": "Orbit" } },
+          "price": { "currency": { "contract": "0x0000000000000000000000000000000000000000", "decimals": 18 }, "amount": { "raw": "1000000000000000000", "native": 1 } }
+        }
+      ],
+      "continuation": "next-page"
+    },
+    {
+      "activities": [
+        {
+          "id": "buy-1",
+          "type": "sale",
+          "eventTimestamp": 1767225600,
+          "fromAddress": "0x0000000000000000000000000000000000000002",
+          "toAddress": "0x000000000000000000000000000000000000dEaD",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "7", "collection": { "name": "Orbit" } },
+          "price": { "currency": { "contract": "0x0000000000000000000000000000000000000000" }, "amount": { "native": 1 } }
+        },
+        {
+          "id": "mint-1",
+          "type": "mint",
+          "eventTimestamp": 1767312000,
+          "fromAddress": "0x0000000000000000000000000000000000000000",
+          "toAddress": "0x000000000000000000000000000000000000dEaD",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "8", "collection": { "name": "Orbit" } },
+          "price": { "currency": { "contract": "0x0000000000000000000000000000000000000000" }, "amount": { "native": 0 } }
+        },
+        {
+          "id": "usdc-sale",
+          "type": "sale",
+          "eventTimestamp": 1772323200,
+          "fromAddress": "0x000000000000000000000000000000000000dEaD",
+          "toAddress": "0x0000000000000000000000000000000000000002",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "9" },
+          "price": { "currency": { "contract": "0x0000000000000000000000000000000000000009", "decimals": 6 }, "amount": { "raw": "1000000", "native": 1 } }
+        },
+        {
+          "id": "missing-price",
+          "type": "sale",
+          "eventTimestamp": 1772323200,
+          "fromAddress": "0x000000000000000000000000000000000000dEaD",
+          "toAddress": "0x0000000000000000000000000000000000000002",
+          "token": { "contract": "0x0000000000000000000000000000000000000001", "tokenId": "10" },
+          "price": null
+        }
+      ],
+      "continuation": null
+    }
+  ]
+}

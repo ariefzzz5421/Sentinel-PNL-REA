@@ -27,6 +27,7 @@ export type PnlSummary = {
   wins: number;
   losses: number;
   unknownBasisSales: number;
+  estimatedSales: number;
   openPositions: number;
   trades: CalculatedTrade[];
   collections: CollectionSummary[];
@@ -38,7 +39,7 @@ const keyOf = (event: TradeEvent) =>
 
 /** One NFT lot per token ID. Sales without a matching buy retain unknown cost basis. */
 export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
-  const positions = new Map<string, { cost: Decimal; collectionKey: string }>();
+  const positions = new Map<string, { cost: Decimal; collectionKey: string; feeKnown: boolean }>();
   const collectionMap = new Map<
     string,
     {
@@ -63,7 +64,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     sells = 0,
     wins = 0,
     losses = 0,
-    unknown = 0;
+    unknown = 0,
+    estimatedSales = 0;
   for (const event of sorted) {
     const amount = new Decimal(event.amountEth);
     const fee = new Decimal(event.feeEth);
@@ -85,6 +87,7 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
       positions.set(key, {
         cost: (positions.get(key)?.cost || zero()).plus(amount).plus(fee),
         collectionKey,
+        feeKnown: (positions.get(key)?.feeKnown ?? true) && event.feeKnown !== false,
       });
       if (included) {
         buys++;
@@ -121,6 +124,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
       continue;
     }
     const profit = amount.minus(fee).minus(cost);
+    const feeKnown = position!.feeKnown && event.feeKnown !== false;
+    if (!feeKnown) estimatedSales++;
     realized = realized.plus(profit);
     col.realized = col.realized.plus(profit);
     if (profit.gt(0)) wins++;
@@ -129,6 +134,7 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
       ...event,
       costEth: cost.toString(),
       realizedEth: profit.toString(),
+      note: feeKnown ? undefined : "Estimate: provider gas/transaction fees unavailable",
     });
   }
   const openByCollection = new Map<string, number>();
@@ -147,6 +153,7 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     wins,
     losses,
     unknownBasisSales: unknown,
+    estimatedSales,
     openPositions: positions.size,
     trades: result.reverse(),
     collections: [...collectionMap.entries()]

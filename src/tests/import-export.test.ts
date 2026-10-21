@@ -24,6 +24,14 @@ describe("ledger import and wallet input", () => {
       parseTradeCsv(toTradeCsv([{ ...event, amountEth: "-1" }])),
     ).toThrow(/amountEth/);
   });
+  it("keeps missing CSV fees unknown instead of declaring them zero", () => {
+    const csv = toTradeCsv([event]).replace(",0.01,,", ",,,");
+    expect(parseTradeCsv(csv)[0].feeKnown).toBe(false);
+  });
+  it("round trips provider fee uncertainty through CSV", () => {
+    const providerEvent: TradeEvent = { ...event, id: "provider", feeEth: "0", feeKnown: false };
+    expect(parseTradeCsv(toTradeCsv([providerEvent]))).toEqual([providerEvent]);
+  });
   it("deduplicates public wallet addresses and rejects invalid entries", () => {
     expect(parseWallets(`${wallet}\n${wallet.toLowerCase()}`)).toHaveLength(1);
     expect(() => parseWallets("not-a-wallet")).toThrow(/Invalid wallet/);

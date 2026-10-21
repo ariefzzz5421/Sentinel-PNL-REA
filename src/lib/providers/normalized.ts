@@ -5,6 +5,7 @@ import {
   eventsSchema,
   type TradeEvent,
 } from "@/lib/schema";
+import { getReservoirEvents } from "./reservoir";
 
 const requestSchema = z.object({
   address: addressSchema,
@@ -42,6 +43,8 @@ export async function getProviderEvents(
 ): Promise<{ events: TradeEvent[]; partial: boolean; warning?: string }> {
   const endpoint = process.env.SENTINEL_PROVIDER_URL;
   const apiKey = process.env.SENTINEL_PROVIDER_API_KEY;
+  const reservoirKey = process.env.RESERVOIR_API_KEY;
+  if (reservoirKey) return getReservoirEvents(input, reservoirKey);
   if (!endpoint || !apiKey)
     throw new ProviderError(
       "Live scanning is not configured. Import a trade CSV or add trades manually.",

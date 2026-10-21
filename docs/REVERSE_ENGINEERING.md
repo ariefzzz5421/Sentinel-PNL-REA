@@ -49,3 +49,26 @@ The `reverse-engineer-anything` skill v42 was available. Its MCP tools were **no
 ## Product translation
 
 Sentinel PNL adopts the useful public pattern: address-first NFT PnL, wallet/contract/bot modes, explicit scan states, and shareable card output. Its calculations, design, code, and provider boundary are original. With no successful reference result, no numeric or visual result detail is claimed to match the reference.
+
+## 2026-10-21 UI reconstruction audit
+
+### REA availability and actual call
+
+The active Codex tool inventory contained **no REA MCP tools**, so no REA MCP browser observation was performed. A read-only diagnostic call, `npx -y rea-agents@6.7.0 doctor --client codex --json`, failed before reporting registration: the local npm cache lacked `@jridgewell/resolve-uri/dist/resolve-uri.mjs` and Node returned `ERR_MODULE_NOT_FOUND`. This is a CLI diagnostic failure, not an REA observation. No MCP configuration was changed. All screenshots and interactions below used ordinary browser inspection with Playwright CLI.
+
+### Viewport evidence and component comparison
+
+| Width | KoalaTools observation | Prior Sentinel | Reconstructed Sentinel |
+| --- | --- | --- | --- |
+| 1440 | Header, left account card, center chain strip/title/scanner, right help card, then empty results | Marketing hero and illustrative PnL card preceded scanner on a separate route | Scanner is the homepage; side cards flank the center form; local-ledger card substitutes for unavailable account features |
+| 1024 | Side cards hidden; center form maxes near 880px | Separate marketing-first homepage | Centered chain strip, title, form, empty state |
+| 768 | Same center sequence, large form with wallet field beside Scan | Scanner only on dashboard | Same center sequence with wallet field beside Scan |
+| 390 | Compact header, horizontally clipped/scrollable chain strip, two-line title, Scan stacked under wallet field, contract/actions, then account card | Marketing content before scanner | Compact header, scrollable supported-chain strip, stacked Scan, contract/actions, local workspace card |
+
+Screenshots: [reference 1440](screenshots/reference-1440.png), [reference 1024](screenshots/reference-1024.png), [reference 768](screenshots/reference-768.png), [reference 390](screenshots/reference-390.png); [Sentinel 1440](screenshots/sentinel-1440.png), [Sentinel 1024](screenshots/sentinel-1024.png), [Sentinel 768](screenshots/sentinel-768.png), [Sentinel 390](screenshots/sentinel-390.png). The final Sentinel captures came from the local production build.
+
+The public reference at 1440 used a roughly 60px header, a centered horizontal chain list, a compact centered heading, and a cyan-outlined form with wallet entry plus Scan in one row. The contract input and Scan Contract / Bot PNL buttons sit below. At 390, Scan moves below the wallet input. Sentinel follows these relationships with original colors, typography, icons and component code. The original reference's account creation, login, cached scan history, and default PnL card are not available in Sentinel; the side card links to the existing local ledger instead.
+
+### Observed interaction evidence and limits
+
+After declining the optional consent dialog, clicking Scan with an empty wallet showed `Invalid address` and a `Got it` button. The earlier public scan with a burn address ended with `Mint receipt unavailable; retry scan`. No successful reference result was accessible, so its result layout, PnL formulas, export controls, and exact backend request/response remain unobserved. Sentinel's results continue on its own dashboard after a supported scan; no result screen is claimed to match the reference. Only three chain hosts are verified for the Reservoir implementation; the additional visible KoalaTools chain options are intentionally omitted from active Sentinel controls.

@@ -39,6 +39,8 @@ export const eventSchema = z.object({
   type: z.enum(["buy", "mint", "sell"]),
   amountEth: z.string().regex(/^\d+(\.\d{1,18})?$/),
   feeEth: z.string().regex(/^\d+(\.\d{1,18})?$/),
+  /** False means the provider did not expose transaction costs; feeEth is an accounting placeholder only. */
+  feeKnown: z.boolean().optional(),
   txHash: z
     .string()
     .trim()

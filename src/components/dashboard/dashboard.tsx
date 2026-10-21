@@ -85,6 +85,7 @@ function exportCard(
   wallet: string,
   sales: number,
   wins: number,
+  estimated: boolean,
 ) {
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
@@ -119,7 +120,7 @@ function exportCard(
   context.fillText("TRACK EVERY MOVE. KNOW YOUR EDGE.", 65, 155);
   context.fillStyle = "#a6b2ad";
   context.font = "26px Arial";
-  context.fillText("REALIZED PNL · ETH", 65, 264);
+  context.fillText(estimated ? "REALIZED PNL ESTIMATE · ETH" : "REALIZED PNL · ETH", 65, 264);
   context.fillStyle = new Decimal(realized).gte(0) ? "#b7ec6d" : "#ff8f83";
   context.font = "bold 88px Arial";
   context.fillText(
@@ -141,7 +142,7 @@ function exportCard(
     65,
     557,
   );
-  context.fillText("ESTIMATE · SOURCE: USER LEDGER", 775, 557);
+  context.fillText(estimated ? "ESTIMATE · FEES UNAVAILABLE" : "SOURCE: USER LEDGER", 775, 557);
   canvas.toBlob((blob) => {
     if (blob) download("sentinel-pnl-card.png", blob);
   }, "image/png");
@@ -187,6 +188,16 @@ export function Dashboard() {
         if (stored) {
           const parsed = eventsSchema.safeParse(JSON.parse(stored));
           if (parsed.success) setEvents(parsed.data);
+        }
+        const scanStatus = sessionStorage.getItem("sentinel-pnl-scan-status-v1");
+        if (scanStatus) {
+          const parsedStatus = JSON.parse(scanStatus) as { partial?: boolean; warning?: string };
+          setPartial(Boolean(parsedStatus.partial));
+          if (parsedStatus.warning) {
+            setMessage(parsedStatus.warning);
+            setMessageKind("info");
+          }
+          sessionStorage.removeItem("sentinel-pnl-scan-status-v1");
         }
       } catch {
         /* corrupted local storage stays isolated */
@@ -452,7 +463,7 @@ export function Dashboard() {
             <CircleHelp size={17} /> Methodology
           </Link>
           <Link href="/">
-            <ArrowLeft size={17} /> Back to site
+            <ArrowLeft size={17} /> Back to scanner
           </Link>
         </div>
       </aside>
@@ -624,6 +635,11 @@ export function Dashboard() {
               events.
             </div>
           )}
+          {events.some((event) => event.feeKnown === false) && (
+            <div className="notice info" role="status">
+              Provider transaction fees are unavailable for some events. Cost basis and matched PnL from these events are estimates.
+            </div>
+          )}
           <div className="section-toolbar">
             <div className="toolbar-title">
               <span className="section-kicker">01 / PERFORMANCE</span>
@@ -649,7 +665,7 @@ export function Dashboard() {
           </div>
           <div className="stat-grid">
             <Stat
-              label="REALIZED PNL"
+              label={summary.estimatedSales ? "REALIZED PNL ESTIMATE" : "REALIZED PNL"}
               value={formatEth(summary.realizedEth)}
               positive={new Decimal(summary.realizedEth).gte(0)}
               detail={`${summary.sells - summary.unknownBasisSales} matched sales`}
@@ -660,13 +676,13 @@ export function Dashboard() {
               detail="Acquisitions + net sales"
             />
             <Stat
-              label="WIN RATE"
+              label={summary.estimatedSales ? "WIN RATE ESTIMATE" : "WIN RATE"}
               value={
                 summary.wins + summary.losses
                   ? `${Math.round((100 * summary.wins) / (summary.wins + summary.losses))}%`
                   : "—"
               }
-              detail={`${summary.wins} wins · ${summary.losses} losses`}
+              detail={`${summary.wins} wins · ${summary.losses} losses${summary.estimatedSales ? " · fees unknown" : ""}`}
             />
             <Stat
               label="OPEN POSITIONS"
@@ -811,14 +827,14 @@ export function Dashboard() {
                       wallet,
                       summary.sells,
                       summary.wins,
+                      summary.estimatedSales > 0,
                     )
                   }
                 >
                   <ArrowDownToLine size={17} /> Download PNG card
                 </button>
                 <p className="small-note">
-                  Card uses only ledger values. No invented wallet balance or
-                  floor price.
+                  Card uses only ledger values. Provider fee gaps make its PnL an estimate.
                 </p>
               </section>
             </div>
@@ -905,7 +921,7 @@ export function Dashboard() {
                                 ? "—"
                                 : trade.realizedEth === null
                                   ? "Unknown basis"
-                                  : `${new Decimal(trade.realizedEth).gte(0) ? "+" : ""}${formatEth(trade.realizedEth)}`}
+                                  : `${trade.note ? "≈" : ""}${new Decimal(trade.realizedEth).gte(0) ? "+" : ""}${formatEth(trade.realizedEth)}`}
                             </td>
                           </tr>
                         ))}

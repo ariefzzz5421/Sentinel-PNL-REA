@@ -1,5 +1,25 @@
 # Provider contract
 
+## Official Reservoir adapter
+
+Set `RESERVOIR_API_KEY` in the server environment. The key is read only by `src/lib/providers/normalized.ts` and sent in the server-side `x-api-key` header. Do not use `NEXT_PUBLIC_` or place the key in the browser.
+
+The adapter calls Reservoir's documented [Users activity v6](https://nft.reservoir.tools/reference/getusersactivityv6) endpoint, `GET /users/activity/v6`, for `sale` and `mint` activities. It requests 20 items per page, follows `continuation`, deduplicates stable activity IDs, and stops after 25 pages. Official [supported chain URLs](https://nft.reservoir.tools/reference/supported-chains) identify:
+
+| Chain | API host |
+| --- | --- |
+| Ethereum | `https://api.reservoir.tools` |
+| Base | `https://api-base.reservoir.tools` |
+| Arbitrum | `https://api-arbitrum.reservoir.tools` |
+
+The mapping requires a sale direction relative to the scanned wallet, a valid contract and token ID, a unique event identity, a valid timestamp, and a native ETH or chain WETH payment price. A sale to the wallet becomes `buy`; a sale from it becomes `sell`; a mint received by it becomes `mint`. Unsupported ERC-20 currencies, unpriced records, ambiguous directions, and quantities other than one are excluded; these mark coverage partial. The adapter does not convert currencies or infer a free mint from a missing price. It filters contract mode locally after validating the contract address. Bot mode aggregates supplied wallets in the same ledger; it does not infer wallet ownership or specialized bot trading strategy.
+
+Reservoir user activity does not establish the wallet's actual gas and all other transaction fees. For mapped events, `feeEth: "0"` is an accounting placeholder paired with `feeKnown: false`; the dashboard labels matched PnL and cost basis as estimates. The schema preserves this marker in CSV export/import. Manual CSV rows remain supported. The older normalized provider below remains a fallback when `RESERVOIR_API_KEY` is unset.
+
+**Verification boundary:** Endpoint parameters and chain hosts were checked against Reservoir's public documentation on 2026-10-21. This environment could not resolve the API host, and no API key was available, so live response shape and live chain coverage have not yet been verified. Tests currently use a clearly marked synthetic contract fixture, not a recorded API response. Replace/add sanitized recordings and run a credentialed live scan before claiming production data accuracy.
+
+## Legacy normalized provider
+
 Live scanning is **unconfigured by default**. Set `SENTINEL_PROVIDER_URL` to a trusted HTTPS endpoint under your control and `SENTINEL_PROVIDER_API_KEY` to its server-side key. Do not place either in a `NEXT_PUBLIC_` variable. This app does not call the reference website's private APIs.
 
 The app POSTs:

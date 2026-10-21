@@ -12,6 +12,7 @@ const header = [
   "type",
   "amountEth",
   "feeEth",
+  "feeKnown",
   "txHash",
 ] as const;
 
@@ -38,6 +39,7 @@ export function parseTradeCsv(text: string): TradeEvent[] {
     type: row.type?.trim(),
     amountEth: row.amountEth?.trim(),
     feeEth: row.feeEth?.trim() || "0",
+    feeKnown: row.feeKnown?.trim() === "false" || !row.feeEth?.trim() ? false : undefined,
     txHash: row.txHash?.trim() || undefined,
   }));
   const result = eventsSchema.safeParse(rows);
