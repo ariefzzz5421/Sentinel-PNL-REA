@@ -71,9 +71,9 @@ function downloadCsv(rows: CollectionRow[]) {
 
 export function ScanResults({
   events, holdings, partial, warning, address,
-}: { events: TradeEvent[]; holdings: PublicHolding[]; partial: boolean; warning: string; address: string }) {
+}: { events: TradeEvent[]; holdings: PublicHolding[]; partial: boolean; warning: string; address: string | null }) {
   const [filter, setFilter] = useState<Filter>("recent");
-  const rows = useMemo(() => createRows(events.filter((event) => event.wallet.toLowerCase() === address.toLowerCase()), holdings), [events, holdings, address]);
+  const rows = useMemo(() => createRows(events.filter((event) => address === null || event.wallet.toLowerCase() === address.toLowerCase()), holdings), [events, holdings, address]);
   const shown = useMemo(() => {
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
       .sort((a, b) => (b.held || 0) - (a.held || 0));
