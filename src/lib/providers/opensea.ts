@@ -1,4 +1,3 @@
-import "server-only";
 import { createHash } from "node:crypto";
 import Decimal from "decimal.js";
 import { z } from "zod";
