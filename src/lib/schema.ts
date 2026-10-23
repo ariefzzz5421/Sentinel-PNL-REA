@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const chains = ["ethereum", "base", "arbitrum"] as const;
+export const chains = ["ethereum", "base", "arbitrum", "robinhood"] as const;
 export const chainSchema = z.enum(chains);
 export const addressSchema = z
   .string()
