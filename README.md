@@ -52,3 +52,15 @@ When `NEXT_PUBLIC_PRIVY_APP_ID` is configured and the production origin is allow
 The advanced manual/CSV workspace is still available at `/dashboard`; it is no longer the homepage header CTA. This preserves existing exports and import functionality.
 
 **Configure Privy:** set `NEXT_PUBLIC_PRIVY_APP_ID` in Vercel Production environment, allow the production origin and localhost in the Privy console, then redeploy (the `NEXT_PUBLIC_` variable is bundled at build time). **Never** add Privy app secrets to public variables or GitHub. An NFT activity provider is still required separately for a real scan; logging in via Privy alone does not provide NFT price history.
+
+
+## Live OpenSea wallet NFT history and profile
+
+Set `OPENSEA_API_KEY` in Vercel > Project > Settings > Environment Variables for **Production**, then redeploy. This is the server-side key for both `GET /api/opensea/profile?address=0x…` and `POST /api/scan`. `NEXT_PUBLIC_PRIVY_APP_ID` remains a separate **public** key for wallet authentication. Never put the OpenSea secret in a public environment variable, browser, repository, or screenshot. Old `RESERVOIR_API_KEY` is a legacy fallback only.
+
+Upon wallet connection, `/profile` fetches public OpenSea name, avatar, banner and bio, then attempts Ethereum, Base and Arbitrum activity scans. It shows the latest priced buy/sell events and ranks positive realized PnL only for matched NFT purchases and sales. Historic gas, marketplace fees, unsupported ERC-20 payments and some mints/transfers cannot be reconstructed and are not invented. The first 400 sale events **per chain** are scanned at most; pagination truncation and unsupported records are surfaced to the user. A wallet not having an OpenSea profile does not stop public address scanning. Scans require an actual API key and live endpoint verification; passing synthetic tests does not certify live accuracy.
+
+OpenSea references:
+- https://docs.opensea.io/reference/get_account
+- https://docs.opensea.io/reference/list_events_by_account
+- https://docs.opensea.io/reference/api-keys
