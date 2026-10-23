@@ -120,12 +120,12 @@ export async function getOpenSeaEvents(
   let cursor: string | undefined;
   let skipped = 0, partial = false, truncated = false;
   // Bounded scan protects Vercel timeouts and free-tier rate limits.
-  const maxPages = 4;
+  const maxPages = 6;
   for (let index = 0; index < maxPages; index++) {
     const url = new URL(`https://api.opensea.io/api/v2/events/accounts/${request.address}`);
     url.searchParams.set("chain", request.chain);
     url.searchParams.set("event_type", "sale");
-    url.searchParams.set("limit", "100");
+    url.searchParams.set("limit", "200");
     if (cursor) url.searchParams.set("next", cursor);
     let response: Response;
     try {
@@ -163,7 +163,7 @@ export async function getOpenSeaEvents(
   const warning = [
     "Realized NFT PnL is estimated: gas/marketplace fees and unsupported ERC-20 payments are not included.",
     skipped ? `${skipped} unverified or unsupported sale event(s) skipped.` : "",
-    truncated ? "History is truncated by the 400-event scan limit." : "",
+    truncated ? "History is truncated by the 1,200-event scan limit." : "",
     "Mints and transferred-in NFT cost bases are not inferred.",
   ].filter(Boolean).join(" ");
   const data = { events: [...events.values()], partial, warning };

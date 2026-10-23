@@ -1,10 +1,21 @@
+# 2026-10-23 Mobile and PnL card update
+
+- Added collection click-through detail modal with trade list and read-only explorer references.
+- Native Canvas-based shareable PNG card; mobile uses Web Share when available, desktop downloads.
+- Removed tall pink incomplete-history warning from the result list; coverage and methodology warnings remain behind expandable Details and on exported cards.
+- Removed noisy per-collection unmatched-basis text; metadata stays represented through estimates and null unknown PnL.
+- Added recognizable Ethereum, Base, Arbitrum chain symbols; mobile chain strip and inputs simplified.
+- Expanded scan ceiling to 1,200 OpenSea sale records per chain, retaining partial-history warnings.
+- Known limitations: no verified parity with KoalaTools; OpenSea-only sale feed excludes most mints, gas and non-ETH payments. Image share card is a fresh Sentinel design, not a copied Koala asset.
+- Verify CI, Vercel preview, and live API/Privy behaviour before treating the release as fully tested.
+
 # Latest integration update — OpenSea
 
 - Implemented server-side OpenSea NFT sale event adapter and public account profile endpoint, plus frontend name/avatar/banner and top matched realized PnL.
 - Connected-wallet dashboard scans Ethereum, Base, Arbitrum automatically per browser session and supports manual refresh.
 - Requires `OPENSEA_API_KEY` in Vercel Production to provide live data; an unavailable or expired key is reported clearly.
 - Unit tests with synthetic responses cover sales, pagination, invalid currencies and key rejection. **No credentialed real OpenSea API scan verified yet.**
-- Data limits: max 400 sale events per chain per request, ERC-721/native ETH/WETH priced sales only; fees and transfers/mints without verifiable cost basis remain unknown.
+- Data limits: max 1,200 sale events per chain per request, ERC-721/native ETH/WETH priced sales only; fees and transfers/mints without verifiable cost basis remain unknown.
 
 # Implementation status
 

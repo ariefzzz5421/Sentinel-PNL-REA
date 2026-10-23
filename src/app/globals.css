@@ -1826,3 +1826,93 @@ td small {
 .scan-results-empty p{margin:0;line-height:1.5}
 @media(max-width:900px){.scan-results-grid{grid-template-columns:1fr}.scan-collection-heading{gap:11px}}
 @media(max-width:600px){.scan-results{margin-top:22px}.scan-result-tabs{gap:7px}.scan-result-tabs button{padding:11px 16px}.scan-result-total{font-size:11px;margin-left:0}.scan-result-tabs .scan-results-export{margin-left:auto}.scan-collection-card{padding:15px}.scan-collection-image{width:54px;height:54px;min-width:54px}.scan-collection-title strong{font-size:15px}.scan-collection-pnl strong{font-size:18px}}
+
+
+/* Sentinel results UI: compact cards, native share sheet and mobile layout */
+.scan-card-open{display:block;width:100%;padding:0;text-align:left;background:transparent;border:0;color:inherit;min-width:0;cursor:pointer}
+.scan-card-open:hover .scan-collection-title strong{color:#9de2ff}
+.scan-card-open:focus-visible,.scan-card-share:focus-visible,.scan-result-tabs button:focus-visible,.scan-modal-actions button:focus-visible{outline:2px solid #6fcffa;outline-offset:4px}
+.scan-collection-card{transition:border-color .2s,transform .2s;overflow:hidden}
+.scan-collection-card:hover{border-color:#6c529b;transform:translateY(-2px)}
+.scan-card-share{display:inline-flex;align-items:center;gap:7px;background:none;border:0;border-top:1px solid #28243d;width:100%;text-align:left;color:#af9dd4;padding:12px 0 0;margin-top:14px;font-size:12px;font-weight:700}
+.scan-card-share svg:last-child{margin-left:auto}
+.scan-card-share:hover{color:#67cefa}
+.scan-result-method{border:1px solid #3b3250;border-radius:11px;background:#171424;padding:11px 15px;margin:0 0 16px;color:#c3b9d5}
+.scan-result-method summary{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;list-style:none}
+.scan-result-method summary::-webkit-details-marker{display:none}
+.scan-result-method summary span{margin-left:auto;color:#83d6f8;font-weight:650}
+.scan-result-method p{color:#aea3bf;font-size:11px;line-height:1.65;margin:9px 0 0}
+.scanner-inline-status{font-size:12px;color:#9a9aba;text-align:center;margin:22px auto 0;max-width:720px;line-height:1.6}
+.scanner-inline-status.is-error{color:#e7a5b4;padding:12px;border:1px solid #5e3a58;background:#24182c;border-radius:10px}
+.scanner-inline-status+.scan-results{margin-top:17px}
+.scanner-wallet-field textarea{overflow-wrap:anywhere;min-height:60px}
+.scanner-wallet-field textarea::placeholder{font-size:13px}
+.scanner-chains button img{width:21px;height:21px;object-fit:contain;border-radius:2px}
+.scan-modal-backdrop{position:fixed;inset:0;z-index:1000;background:#060510dc;backdrop-filter:blur(8px);display:grid;place-items:center;padding:16px;overflow-y:auto}
+.scan-detail-modal{background:#111021;color:#f9f5ff;width:min(100%,640px);max-height:min(94dvh,860px);overflow-y:auto;border:1px solid #66518c;border-radius:19px;padding:21px;box-shadow:0 30px 110px #000b;scrollbar-width:thin}
+.scan-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:17px}
+.scan-modal-head span{color:#b394e9;font-size:10px;font-weight:800;letter-spacing:.13em}
+.scan-modal-head h2{font-size:clamp(19px,4vw,25px);margin:7px 0 0;overflow-wrap:anywhere}
+.scan-modal-close{display:grid;place-items:center;color:#d9d0eb;border:1px solid #403555;background:#1c182f;width:38px;height:38px;flex:none;border-radius:10px}
+.scan-pnl-poster{border:1px solid #634a82;border-radius:17px;padding:26px;background:radial-gradient(circle at top right,#43285c,transparent 56%),linear-gradient(135deg,#17132e,#251737);min-height:225px}
+.scan-poster-brand{color:#b997fb;font-weight:850;font-size:12px;letter-spacing:.12em;display:flex;justify-content:space-between;gap:8px}
+.scan-poster-brand span{color:#81d6fa;font-size:11px}
+.scan-pnl-poster>p{font-size:clamp(20px,4vw,29px);margin:26px 0 7px;color:#faf6ff;font-weight:750;overflow-wrap:anywhere}
+.scan-pnl-poster>strong{display:block;font-size:clamp(30px,6vw,44px);letter-spacing:-.05em}
+.scan-pnl-poster>small{display:block;font-size:10px;color:#bcaad5;margin:7px 0 21px}
+.scan-poster-stats{border-top:1px solid #66557855;padding-top:15px;display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#b1a2cc}
+.scan-poster-stats div{display:flex;flex-direction:column;gap:7px}
+.scan-poster-stats b{color:#faf6ff;font-size:19px}
+.scan-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 18px}
+.scan-modal-actions button{min-height:40px;border:1px solid #594671;border-radius:9px;color:#e9dcff;background:#221a36;display:inline-flex;gap:7px;align-items:center;justify-content:center;padding:8px 13px;font-size:12px;font-weight:700;flex:1}
+.scan-modal-actions button:first-child{background:#51c4f2;color:#081022;border:0}
+.scan-modal-transactions{border-top:1px solid #342b46;padding-top:14px}
+.scan-modal-transactions h3{font-size:13px;font-weight:750;margin:0 0 10px;display:flex;justify-content:space-between}
+.scan-modal-transactions h3 span{color:#9385af}
+.scan-trade{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #262238;font-size:12px}
+.scan-trade>div{display:flex;align-items:center;gap:7px}
+.scan-trade>div:first-child{flex-wrap:wrap;min-width:0}
+.scan-trade b{color:#5bdbce}
+.scan-trade span{color:#a79abf}
+.scan-trade a{color:#88d4fd}
+.scan-no-trades,.scan-modal-disclaimer{font-size:11px;color:#a99abc;line-height:1.5}
+.scan-modal-disclaimer{margin:15px 0 0}
+@media(max-width:900px){.scan-results-grid{grid-template-columns:1fr}.scan-collection-card{max-width:none}}
+@media(max-width:600px){
+  .scanner-page{max-width:100%;overflow-x:clip}
+  .scanner-layout{width:calc(100% - 24px);gap:0}
+  .scanner-header{padding:0 12px;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .scanner-brand img{width:34px;height:34px}
+  .scanner-chains{width:100%;max-width:calc(100vw - 24px);overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;gap:3px}
+  .scanner-chains::-webkit-scrollbar{display:none}
+  .scanner-chains button{font-size:12px;min-height:43px;padding:8px 9px;gap:5px}
+  .scanner-chains button img{width:20px;height:20px}
+  .scanner-intro{padding:27px 10px 26px}
+  .scanner-intro h1{font-size:clamp(29px,8vw,40px);line-height:1.14}
+  .scanner-intro p{font-size:14px}
+  .scanner-form{border-radius:18px;padding:15px}
+  .scanner-wallet-field textarea{height:58px;min-height:58px;max-height:118px;padding:16px 62px 15px 14px;resize:vertical;font-size:14px;line-height:1.4}
+  .scanner-wallet-field textarea::placeholder{font-size:13px}
+  .scanner-file{right:8px;bottom:12px}
+  .scanner-primary-row{gap:10px}
+  .scanner-contract{padding:0 13px;text-overflow:ellipsis}
+  .scanner-submit{height:52px}
+  .scanner-secondary-row button{font-size:12px;min-width:0;padding:13px 6px}
+  .scan-results{margin:17px auto 30px}
+  .scan-result-tabs{gap:7px;margin-bottom:15px}
+  .scan-result-tabs button{padding:10px 13px;font-size:12px}
+  .scan-result-tabs .scan-results-export{margin-left:auto}
+  .scan-result-total{flex-basis:100%;order:4;margin:4px 0 0;font-size:11px}
+  .scan-collection-card{padding:14px;border-radius:17px}
+  .scan-collection-heading{gap:10px}
+  .scan-collection-image{width:54px;height:54px;min-width:54px}
+  .scan-collection-title strong{font-size:15px}
+  .scan-collection-pnl{min-width:72px}
+  .scan-collection-pnl strong{font-size:18px}
+  .scan-collection-stats strong{font-size:20px}
+  .scan-detail-modal{padding:14px;border-radius:16px;max-height:calc(100dvh - 16px)}
+  .scan-modal-backdrop{padding:8px}
+  .scan-pnl-poster{padding:18px;min-height:200px}
+  .scan-modal-actions{display:grid;grid-template-columns:1fr 1fr}
+  .scan-modal-actions button:last-child{grid-column:1/-1}
+}

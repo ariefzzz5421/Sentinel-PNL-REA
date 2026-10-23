@@ -38,6 +38,22 @@ describe("OpenSea adapter and PnL engine", () => {
     expect(summary.unknownBasisSales).toBe(0);
     expect(data.warning).toContain("fees");
   });
+  it("requests 200 sale events per page and reports partial history after six pages", async () => {
+    let pageNumber = 0;
+    const fetcher = vi.fn(async (input: URL | RequestInfo) => {
+      const url = new URL(String(input));
+      expect(url.searchParams.get("limit")).toBe("200");
+      pageNumber++;
+      return new Response(JSON.stringify({
+        asset_events: [sale("buy", "1000000000000000000", 1700000000 + pageNumber)],
+        next: "cursor-" + pageNumber,
+      }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const result = await getOpenSeaEvents(request, "test-key", fetcher);
+    expect(fetcher).toHaveBeenCalledTimes(6);
+    expect(result.partial).toBe(true);
+    expect(result.warning).toContain("1,200-event");
+  });
   it("skips unsupported currencies without treating price as zero", async () => {
     const bad = { ...sale("buy", "1000000000000000000", 1700000000), payment: { symbol: "USDC", quantity: "1000000", decimals: 6, token_address: "0x0000000000000000000000000000000000000003" } };
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ asset_events: [bad], next: null }))) as unknown as typeof fetch;

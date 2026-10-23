@@ -20,6 +20,7 @@ export function ScannerHome() {
   const [error, setError] = useState(false);
   const [resultEvents, setResultEvents] = useState<TradeEvent[] | null>(null);
   const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
+  const [holdingsComplete, setHoldingsComplete] = useState(false);
   const [resultAddress, setResultAddress] = useState<string | null>(null);
   const [resultPartial, setResultPartial] = useState(false);
   const [resultWarning, setResultWarning] = useState("");
@@ -41,6 +42,7 @@ export function ScannerHome() {
     let resolutionNote = "";
     setResultEvents(null);
     setResultHoldings([]);
+    setHoldingsComplete(false);
     setResultAddress(null);
     setResultWarning("");
     const selected = scanChainById(chain);
@@ -87,6 +89,7 @@ export function ScannerHome() {
       localStorage.setItem(STORE, JSON.stringify([...merged.values()]));
       sessionStorage.setItem("sentinel-pnl-scan-status-v1", JSON.stringify({ partial: partial || failures.length > 0, warning: [resolutionNote, ...warnings, ...failures].join(" ") }));
       let holdings: PublicHolding[] = [];
+      let holdingsVerifiedComplete = false;
       let holdingWarning = "";
       if (mode === "wallet" && addresses.length === 1) {
         try {
@@ -95,12 +98,14 @@ export function ScannerHome() {
           if (!response.ok) holdingWarning = "Holding data unavailable from OpenSea.";
           else if (payload && typeof payload === "object" && "holdings" in payload && Array.isArray(payload.holdings)) {
             holdings = payload.holdings as PublicHolding[];
-            if ("partial" in payload && payload.partial) holdingWarning = "Holding history may be incomplete.";
+            holdingsVerifiedComplete = !("partial" in payload && payload.partial);
+            if (!holdingsVerifiedComplete) holdingWarning = "Holding list is incomplete.";
           }
         } catch { holdingWarning = "Holding data unavailable from OpenSea."; }
       }
       setResultEvents(gathered);
       setResultHoldings(holdings);
+      setHoldingsComplete(holdingsVerifiedComplete);
       setResultAddress(addresses.length === 1 ? addresses[0] : null);
       setResultPartial(Boolean(partial || failures.length || holdingWarning));
       setResultWarning([resolutionNote, ...warnings, ...failures, holdingWarning].filter(Boolean).join(" "));
@@ -131,7 +136,7 @@ export function ScannerHome() {
         <section className="scanner-form" aria-label="Wallet scanner">
           <div className="scanner-primary-row">
             <div className="scanner-wallet-field">
-              <textarea aria-label="Wallet addresses or ENS names" title="Paste up to 100 addresses or 20 ENS names, separated by lines, spaces, or commas." rows={2} value={wallets} onChange={(event) => setWallets(event.target.value)} placeholder="0x… wallet address or name.eth"/>
+              <textarea aria-label="Wallet addresses or ENS names" title="Paste up to 100 addresses or 20 ENS names, separated by lines, spaces, or commas." rows={2} value={wallets} onChange={(event) => setWallets(event.target.value)} placeholder="0x... or name.eth"/>
               <input ref={fileRef} className="visually-hidden" type="file" accept=".txt,text/plain" onChange={(event) => void loadWallets(event.target.files?.[0])}/>
               <button className="scanner-file" type="button" onClick={() => fileRef.current?.click()}><FileInput size={14}/> .txt</button>
             </div>
@@ -143,15 +148,11 @@ export function ScannerHome() {
             <button type="button" className="scanner-bot-btn" disabled={busy} onClick={() => void scan("bot")}>Bot PNL</button>
           </div>
         </section>
-        <div className="scanner-mobile-workspace">
-          <h2>Your local workspace</h2>
-          <p>Wallet connection is optional. Scanned and imported trades are saved in this browser.</p>
-          <Link href="/dashboard">Open ledger <ArrowRight size={15}/></Link>
-          <Link href="/methodology">PnL methodology <CircleHelp size={15}/></Link>
-        </div>
-        {message && <div className={`scanner-message ${error ? "error" : ""}`} role={error ? "alert" : "status"}>{message}</div>}
+        {message && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
+          {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " priced events. Tap any collection to view or share its PnL."}
+        </p>}
         {resultEvents !== null
-          ? <ScanResults events={resultEvents} holdings={resultHoldings} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
+          ? <ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
       <aside className="scanner-side scanner-side-right" aria-label="How to use">
