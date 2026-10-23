@@ -1791,3 +1791,38 @@ td small {
 .personal-dashboard .personal-trade-row>strong:last-child{white-space:nowrap}
 @media(max-width:1100px){.personal-dashboard .personal-panels{grid-template-columns:1fr 1fr}.personal-activity{grid-column:1/-1}}
 @media(max-width:720px){.personal-dashboard .personal-panels{grid-template-columns:1fr}.personal-activity{grid-column:auto}.personal-identity{align-items:flex-start;gap:12px}.personal-avatar{width:51px;height:51px;border-radius:13px}}
+
+
+/* Inline NFT scan results — collection-first mobile/desktop layout */
+.scan-results{margin:35px auto 30px;width:100%;min-width:0}
+.scan-result-tabs{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 22px}
+.scan-result-tabs button{border:1px solid #39334f;border-radius:32px;padding:12px 21px;background:#11111f;color:#b5aecb;font-size:13px;font-weight:750;display:inline-flex;gap:8px;align-items:center}
+.scan-result-tabs button.active{border-color:#51c2eb;background:#0b2634;color:#61d4fb}
+.scan-result-total{color:#a49ab6;font-size:12px;margin-left:auto}
+.scan-result-tabs .scan-results-export{padding:11px 17px;color:#c1bdd2;border-color:#4c3b67}
+.scan-results-warning{border:1px solid #715062;background:#2f1e30;color:#e5b4c4;border-radius:12px;padding:12px 16px;margin:0 0 18px;line-height:1.55;font-size:12px}
+.scan-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:16px}
+.scan-collection-card{padding:19px;border:1px solid #35304a;border-radius:19px;background:#151323;min-width:0}
+.scan-collection-heading{display:flex;align-items:center;gap:12px;min-width:0}
+.scan-collection-image{width:60px;height:60px;min-width:60px;border-radius:14px;object-fit:cover;overflow:hidden;border:1px solid #413451}
+.scan-collection-placeholder{background:linear-gradient(150deg,#422f5e,#1e203e);display:grid;place-items:center;color:#b99cff}
+.scan-collection-title{flex:1;min-width:0;overflow:hidden}
+.scan-collection-title strong{font-size:17px;font-weight:750;display:block;color:#f5f2ff;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.scan-collection-title span{display:block;font-size:11px;font-weight:800;color:#53c6fc;margin-top:7px}
+.scan-collection-pnl{text-align:right;min-width:73px;flex:none}
+.scan-collection-pnl strong{font-size:20px;display:block;font-weight:800;line-height:1.15}
+.scan-collection-pnl .positive{color:#34d5aa!important}
+.scan-collection-pnl .negative{color:#fe8e9d!important}
+.scan-collection-pnl .unknown{color:#827b9b}
+.scan-collection-pnl small{display:block;color:#8a83a3;font-size:10px;margin-top:5px}
+.scan-collection-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #302c43;margin-top:17px;padding-top:18px;gap:10px}
+.scan-collection-stats div:nth-child(2){text-align:center}
+.scan-collection-stats div:nth-child(3){text-align:right}
+.scan-collection-stats span{font-size:10px;font-weight:750;letter-spacing:.08em;color:#7e7895;display:block;margin-bottom:10px}
+.scan-collection-stats strong{font-size:21px;font-weight:750;color:#eae7fa}
+.scan-collection-stats div:nth-child(3) strong{color:#56c5f5}
+.scan-collection-note{color:#b19aaf;font-size:11px;margin:13px 0 0;line-height:1.5}
+.scan-results-empty{text-align:center;padding:35px 16px;color:#b7aacb;display:grid;justify-items:center;gap:10px;border:1px dashed #423352;border-radius:18px}
+.scan-results-empty p{margin:0;line-height:1.5}
+@media(max-width:900px){.scan-results-grid{grid-template-columns:1fr}.scan-collection-heading{gap:11px}}
+@media(max-width:600px){.scan-results{margin-top:22px}.scan-result-tabs{gap:7px}.scan-result-tabs button{padding:11px 16px}.scan-result-total{font-size:11px;margin-left:0}.scan-result-tabs .scan-results-export{margin-left:auto}.scan-collection-card{padding:15px}.scan-collection-image{width:54px;height:54px;min-width:54px}.scan-collection-title strong{font-size:15px}.scan-collection-pnl strong{font-size:18px}}
