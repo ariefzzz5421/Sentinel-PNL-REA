@@ -11,7 +11,7 @@ import { calculatePnl } from "@/lib/pnl/calculate";
 const STORE = "sentinel-pnl-events-v1";
 const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
 const amount = (value: string) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 4, minimumFractionDigits: 0 });
-const chainNames: Record<Chain, string> = { ethereum: "Ethereum", base: "Base", arbitrum: "Arbitrum" };
+const chainNames: Record<Chain, string> = { ethereum: "Ethereum", base: "Base", arbitrum: "Arbitrum", robinhood: "Robinhood" };
 type OpenSeaPublicProfile = { address: string; displayName: string | null; username: string | null; ensName: string | null; avatar: string | null; banner: string | null; bio: string | null; verified: boolean };
 
 function readLedger(): TradeEvent[] {
