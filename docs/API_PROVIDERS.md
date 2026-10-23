@@ -1,3 +1,13 @@
+# OpenSea API (preferred)
+
+`OPENSEA_API_KEY` is the recommended provider secret. The live adapter at `src/lib/providers/opensea.ts` calls OpenSea `GET /api/v2/events/accounts/{address}?chain=ethereum|base|arbitrum&event_type=sale&limit=100&next=...`, following up to four 100-event pages per chain. Only ERC-721 style, single-quantity, priced native ETH/WETH sales with verifiable buyer/seller and token address are imported into the existing PnL ledger; other events are explicitly omitted and warnings/partial coverage are returned. Historical marketplace fees and gas are not supplied by this feed; PnL is estimated, not tax-grade. **Only matched buy/sell lots have known realized profit.**
+
+`GET /api/opensea/profile?address=...` uses `GET /api/v2/accounts/{address}` and exposes only publicly available, sanitized avatar/banner/display name/username/ENS/bio/verification. An OpenSea public profile does not require Privy login, and Privy login does not confer OpenSea session/account access. The viewer only sees a profile for their connected address.
+
+`RESERVOIR_API_KEY` is maintained only for compatibility with older deployments; the currently active OpenSea key takes precedence. Refer to official current OpenSea docs: https://docs.opensea.io/reference/api-keys, https://docs.opensea.io/reference/list_events_by_account and https://docs.opensea.io/reference/get_account.
+
+## Legacy integrations
+
 # Provider contract
 
 ## Official Reservoir adapter
