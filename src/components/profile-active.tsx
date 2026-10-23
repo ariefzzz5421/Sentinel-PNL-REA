@@ -34,7 +34,7 @@ export default function ActiveProfile() {
   const address = addresses.includes(selected) ? selected : addresses[0];
   const [events, setEvents] = useState<TradeEvent[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [chain, setChain] = useState<Chain>("ethereum");
+  const [chain, setChain] = useState<Chain | "all">("all");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [noticeError, setNoticeError] = useState(false);
@@ -84,38 +84,44 @@ export default function ActiveProfile() {
     [summary.trades],
   );
 
-  const scanWallet = useCallback(async (wallet: string, targetChain: Chain) => {
+  const scanWallet = useCallback(async (wallet: string, targetChain: Chain | "all") => {
     setBusy(true);
     setNoticeError(false);
-    setNotice(`Scanning ${short(wallet)} on ${chainNames[targetChain]}…`);
+    const targets: Chain[] = targetChain === "all" ? ["ethereum", "base", "arbitrum"] : [targetChain];
+    setNotice("Scanning public NFT trades on " + targets.map((name) => chainNames[name]).join(", ") + "…");
     try {
-      const response = await fetch("/api/scan", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: wallet, chain: targetChain, mode: "wallet" }),
-      });
-      const payload: unknown = await response.json();
-      if (!response.ok) {
-        const error = payload && typeof payload === "object" && "error" in payload
-          ? String(payload.error) : "Live NFT scan failed.";
-        throw new Error(error);
-      }
-      if (!payload || typeof payload !== "object" || !("events" in payload)) {
-        throw new Error("Provider returned an invalid scan response.");
-      }
-      const incoming = eventsSchema.parse(payload.events);
-      const metadata = payload as { partial?: boolean; warning?: string };
+      // A failure on one chain does not discard verified data from other chains.
+      const responses = await Promise.all(targets.map(async (selectedChain) => {
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address: wallet, chain: selectedChain, mode: "wallet" }),
+        });
+        const payload: unknown = await response.json();
+        if (!response.ok) {
+          const message = payload && typeof payload === "object" && "error" in payload ? String(payload.error) : "Scan failed";
+          throw new Error(chainNames[selectedChain] + ": " + message);
+        }
+        if (!payload || typeof payload !== "object" || !("events" in payload)) throw new Error("Invalid provider response");
+        const data = payload as { events: unknown; partial?: boolean; warning?: string };
+        return { chain: selectedChain, events: eventsSchema.parse(data.events), partial: Boolean(data.partial), warning: data.warning };
+      }).map((task) => task.then((data) => ({ ok: true as const, data }), (error: unknown) => ({ ok: false as const, error: error instanceof Error ? error.message : "Scan failed" }))));
+
+      const successes = responses.filter((result): result is Extract<(typeof responses)[number], { ok: true }> => result.ok);
+      const failures = responses.filter((result): result is Extract<(typeof responses)[number], { ok: false }> => !result.ok).map((result) => result.error);
+      if (!successes.length) throw new Error(failures[0] || "No scan provider available.");
+
       const merged = new Map(readLedger().map((event) => [event.id, event]));
-      for (const event of incoming) merged.set(event.id, event);
-      if (merged.size > 10_000) throw new Error("Ledger limit reached. Export a CSV from the workspace first.");
+      for (const result of successes) for (const event of result.data.events) merged.set(event.id, event);
+      if (merged.size > 10_000) throw new Error("Local ledger limit reached. Export CSV first.");
       const next = [...merged.values()];
       localStorage.setItem(STORE, JSON.stringify(next));
       setEvents(next);
       setHasScanned(true);
-      setCoveragePartial(Boolean(metadata.partial));
-      setNotice(
-        `${incoming.length} supported NFT event(s) loaded from ${chainNames[targetChain]}.${metadata.partial ? " History may be incomplete." : ""}${metadata.warning ? ` ${metadata.warning}` : ""}`,
-      );
+      setCoveragePartial(Boolean(failures.length || successes.some((result) => result.data.partial)));
+      const count = successes.reduce((total, result) => total + result.data.events.length, 0);
+      setNotice(count + " supported NFT event(s) loaded across " + successes.length + " network(s). " +
+        successes.map((result) => result.data.warning || "").filter(Boolean).join(" ") + " " + failures.join(" "));
     } catch (error) {
       setNoticeError(true);
       setNotice(error instanceof Error ? error.message : "Unable to scan NFT history.");
@@ -180,7 +186,7 @@ export default function ActiveProfile() {
         <span className="personal-toolbar-label"><span className="personal-dot"/> {hasScanned ? "Latest scan completed" : "Public on-chain activity"}</span>
         <div className="profile-scan-actions">
           <select aria-label="Scan blockchain" value={chain} disabled={busy} onChange={(event) => { setChain(event.target.value as Chain); setNotice(""); setHasScanned(false); }}>
-            <option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option>
+            <option value="all">All supported networks</option><option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option>
           </select>
           <button type="button" disabled={busy} onClick={() => void scanWallet(address, chain)}>
             <RefreshCw size={15} className={busy ? "personal-spin" : ""}/> {busy ? "Scanning…" : "Refresh PnL"}
