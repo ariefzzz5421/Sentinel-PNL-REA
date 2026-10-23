@@ -11,7 +11,7 @@ import { calculatePnl } from "@/lib/pnl/calculate";
 const STORE = "sentinel-pnl-events-v1";
 const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
 const amount = (value: string) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 4, minimumFractionDigits: 0 });
-const chainNames: Record<Chain, string> = { ethereum: "Ethereum", base: "Base", arbitrum: "Arbitrum" };
+const chainNames: Record<Chain, string> = { ethereum: "Ethereum", base: "Base", arbitrum: "Arbitrum", robinhood: "Robinhood" };
 type OpenSeaPublicProfile = { address: string; displayName: string | null; username: string | null; ensName: string | null; avatar: string | null; banner: string | null; bio: string | null; verified: boolean };
 
 function readLedger(): TradeEvent[] {
@@ -97,7 +97,7 @@ export default function ActiveProfile() {
   const scanWallet = useCallback(async (wallet: string, targetChain: Chain | "all") => {
     setBusy(true);
     setNoticeError(false);
-    const targets: Chain[] = targetChain === "all" ? ["ethereum", "base", "arbitrum"] : [targetChain];
+    const targets: Chain[] = targetChain === "all" ? ["ethereum", "base", "arbitrum", "robinhood"] : [targetChain];
     setNotice("Scanning public NFT trades on " + targets.map((name) => chainNames[name]).join(", ") + "…");
     try {
       // A failure on one chain does not discard verified data from other chains.
@@ -200,7 +200,7 @@ export default function ActiveProfile() {
         <span className="personal-toolbar-label"><span className="personal-dot"/> {hasScanned ? "Latest scan completed" : "Public on-chain activity"}</span>
         <div className="profile-scan-actions">
           <select aria-label="Scan blockchain" value={chain} disabled={busy} onChange={(event) => { setChain(event.target.value as Chain); setNotice(""); setHasScanned(false); }}>
-            <option value="all">All supported networks</option><option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option>
+            <option value="all">All supported networks</option><option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option><option value="robinhood">Robinhood</option>
           </select>
           <button type="button" disabled={busy} onClick={() => void scanWallet(address, chain)}>
             <RefreshCw size={15} className={busy ? "personal-spin" : ""}/> {busy ? "Scanning…" : "Refresh PnL"}
