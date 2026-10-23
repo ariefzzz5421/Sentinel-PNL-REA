@@ -41,18 +41,6 @@ const saleSchema = z.object({
   transaction: z.string().optional(),
   order_hash: z.string().optional(),
 });
-const mintSchema = z.object({
-  event_type: z.literal("mint"),
-  event_timestamp: z.number().positive(),
-  chain: z.string(),
-  asset: nftSchema.optional(),
-  nft: nftSchema.optional(),
-  maker: z.string().optional(),
-  taker: z.string().nullable().optional(),
-  payment: paymentSchema.optional(),
-  quantity: z.number().int().positive().optional(),
-  transaction: z.string().optional(),
-});
 type ScanData = { events: TradeEvent[]; partial: boolean; warning?: string };
 const cache = new Map<string, { expires: number; data: ScanData }>();
 
@@ -60,6 +48,7 @@ function parseEthPayment(payment: z.infer<typeof paymentSchema>, chain: Chain): 
   const symbol = payment.symbol.toUpperCase();
   const token = payment.token_address?.toLowerCase();
   if (symbol !== "ETH" && symbol !== "WETH") return null;
+  if (token && !EVM_ADDRESS.test(token)) return null;
   if (token && EVM_ADDRESS.test(token) && !native.has(token) && token !== weth[chain]) return null;
   if (symbol === "WETH" && token !== weth[chain]) return null;
   try {
