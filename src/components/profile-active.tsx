@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, ArrowUpRight, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { eventsSchema, type Chain, type TradeEvent } from "@/lib/schema";
@@ -11,6 +12,7 @@ const STORE = "sentinel-pnl-events-v1";
 const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
 const amount = (value: string) => Number(value).toLocaleString("en-US", { maximumFractionDigits: 4, minimumFractionDigits: 0 });
 const chainNames: Record<Chain, string> = { ethereum: "Ethereum", base: "Base", arbitrum: "Arbitrum" };
+type OpenSeaPublicProfile = { address: string; displayName: string | null; username: string | null; ensName: string | null; avatar: string | null; banner: string | null; bio: string | null; verified: boolean };
 
 function readLedger(): TradeEvent[] {
   try {
@@ -38,11 +40,32 @@ export default function ActiveProfile() {
   const [noticeError, setNoticeError] = useState(false);
   const [coveragePartial, setCoveragePartial] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
+  const [profile, setProfile] = useState<OpenSeaPublicProfile | null>(null);
+  const [profileStatus, setProfileStatus] = useState("");
 
   useEffect(() => {
     setEvents(readLedger());
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!ready || !authenticated || !address) { setProfile(null); return; }
+    let canceled = false;
+    setProfile(null);
+    setProfileStatus("Loading OpenSea public profile…");
+    void fetch("/api/opensea/profile?address=" + encodeURIComponent(address))
+      .then(async (response) => {
+        const data: unknown = await response.json();
+        if (!response.ok) throw new Error(data && typeof data === "object" && "error" in data ? String(data.error) : "OpenSea profile unavailable");
+        if (!data || typeof data !== "object" || !("profile" in data)) throw new Error("Invalid OpenSea profile response");
+        return (data as { profile: OpenSeaPublicProfile | null }).profile;
+      }).then((value) => {
+        if (!canceled) { setProfile(value); setProfileStatus(value ? "" : "No public OpenSea profile found."); }
+      }).catch((error: unknown) => {
+        if (!canceled) setProfileStatus(error instanceof Error ? error.message : "OpenSea profile unavailable");
+      });
+    return () => { canceled = true; };
+  }, [ready, authenticated, address]);
 
   const personal = useMemo(
     () => events.filter((event) => event.wallet.toLowerCase() === address),
@@ -55,6 +78,11 @@ export default function ActiveProfile() {
     ? Math.round((summary.wins / (summary.wins + summary.losses)) * 100)
     : null;
   const recent = useMemo(() => [...personal].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8), [personal]);
+  const biggestWins = useMemo(
+    () => summary.trades.filter((trade) => trade.type === "sell" && trade.realizedEth !== null && Number(trade.realizedEth) > 0)
+      .sort((a, b) => Number(b.realizedEth) - Number(a.realizedEth)).slice(0, 5),
+    [summary.trades],
+  );
 
   const scanWallet = useCallback(async (wallet: string, targetChain: Chain) => {
     setBusy(true);
@@ -124,14 +152,22 @@ export default function ActiveProfile() {
   }
 
   return <main className="profile-page personal-dashboard">
-    <section className="profile-hero personal-profile-hero">
+    <section className="profile-hero personal-profile-hero" style={profile?.banner ? { backgroundImage: 'linear-gradient(90deg,rgba(17,13,29,.95),rgba(17,13,29,.72)),url("' + profile.banner + '")', backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
       <div className="personal-hero-top">
         <div>
-          <p className="profile-eyebrow"><ShieldCheck size={14}/> CONNECTED WALLET · PERSONAL DASHBOARD</p>
-          <h1>Your NFT performance.</h1>
-          <p>Estimated realized PnL for the connected address. Only supported priced NFT events are included.</p>
+          <p className="profile-eyebrow"><ShieldCheck size={14}/> CONNECTED WALLET · OPENSEA PROFILE</p>
+          <div className="personal-identity">
+            {profile?.avatar
+              ? <Image src={profile.avatar} width={66} height={66} unoptimized alt="OpenSea public avatar" className="personal-avatar"/>
+              : <div className="personal-avatar personal-avatar-placeholder"><Wallet size={26}/></div>}
+            <div><h1>{profile?.displayName || "Your NFT performance."} {profile?.verified && <span className="personal-verified" title="Verified on OpenSea">✓</span>}</h1>
+              <p>{profile?.ensName || profile?.username || (address ? short(address) : "")}</p>
+            </div>
+          </div>
+          {profile?.bio ? <p className="personal-bio">{profile.bio}</p> : <p>Personal NFT performance. Historical realized PnL is estimated when fees are unavailable.</p>}
+          {profileStatus && <p className="personal-profile-status">{profileStatus}</p>}
         </div>
-        {address && <a className="personal-explorer" target="_blank" rel="noopener noreferrer" href={`https://etherscan.io/address/${address}`}>View address <ArrowUpRight size={15}/></a>}
+        {address && <a className="personal-explorer" target="_blank" rel="noopener noreferrer" href={"https://opensea.io/" + (profile?.username ? encodeURIComponent(profile.username) : address)}>OpenSea profile <ArrowUpRight size={15}/></a>}
       </div>
       {addresses.length ? <div className="profile-wallets" role="group" aria-label="Your connected wallets">
         {addresses.map((item) => <button key={item} type="button" className={item === address ? "active" : ""}
@@ -173,6 +209,15 @@ export default function ActiveProfile() {
       </div>
 
       <div className="personal-panels">
+        <section className="profile-panel personal-section personal-biggest">
+          <div className="personal-section-head"><div><span className="personal-kicker">TOP PERFORMERS</span><h2>Biggest realized NFT PnL</h2></div></div>
+          {biggestWins.length ? <div className="personal-collection-list">
+            {biggestWins.map((trade) => <div className="personal-collection-row" key={trade.id}>
+              <div><strong>{trade.collection} #{trade.tokenId}</strong><small>{chainNames[trade.chain]} · Sold {new Date(trade.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</small></div>
+              <div className="personal-collection-result"><strong className="personal-profit">+{amount(trade.realizedEth || "0")} ETH</strong><small>{trade.note || "Matched buy → sell"}</small></div>
+            </div>)}
+          </div> : <p className="personal-empty">No profitable matched buy → sell pairs in the available history. Unknown cost basis is never reported as profit.</p>}
+        </section>
         <section className="profile-panel personal-section personal-collections">
           <div className="personal-section-head"><div><span className="personal-kicker">BREAKDOWN</span><h2>Collection PnL</h2></div></div>
           {summary.collections.length ? <div className="personal-collection-list">
@@ -188,7 +233,7 @@ export default function ActiveProfile() {
         </section>
 
         <section className="profile-panel personal-section personal-activity">
-          <div className="personal-section-head"><div><span className="personal-kicker">ACTIVITY</span><h2>Recent NFT trades</h2></div></div>
+          <div className="personal-section-head"><div><span className="personal-kicker">ACTIVITY</span><h2>Latest NFT trades</h2></div></div>
           {recent.length ? <div className="personal-trade-list">
             {recent.map((event) => <div key={event.id} className="personal-trade-row">
               <span className={`personal-trade-badge ${event.type}`}>{event.type.toUpperCase()}</span>
