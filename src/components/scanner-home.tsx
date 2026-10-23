@@ -80,7 +80,7 @@ export function ScannerHome() {
       sessionStorage.setItem("sentinel-pnl-scan-status-v1", JSON.stringify({ partial: partial || failures.length > 0, warning: [resolutionNote, ...warnings, ...failures].join(" ") }));
       if (gathered.length) router.push("/dashboard");
       else setMessage(`${resolutionNote} No supported priced NFT trades found.${partial || failures.length ? " Coverage is partial." : ""} ${[...warnings, ...failures].join(" ")}`.trim());
-    } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Scan failed."); setError(true); }
+    } catch (cause) { const detail = cause instanceof Error ? cause.message : "Scan failed."; setMessage([resolutionNote, detail].filter(Boolean).join(" ")); setError(true); }
     finally { setBusy(false); }
   }
   return <div className="scanner-page">

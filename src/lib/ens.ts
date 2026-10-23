@@ -27,7 +27,25 @@ export async function resolveEnsName(
     if (!address || !addressSchema.safeParse(address).success) throw new Error("This ENS name has no EVM address record.");
     return { name, address: address.toLowerCase(), record: specific ? "chain" : "ethereum" };
   } catch (error) {
+    // Independent fallback: OpenSea's documented public ENS/account resolver.
+    // Never treat a profile name as proof of wallet ownership.
+    const key = process.env.OPENSEA_API_KEY;
+    if (key) {
+      try {
+        const response = await fetch("https://api.opensea.io/api/v2/accounts/resolve/" + encodeURIComponent(name), {
+          headers: { accept: "application/json", "x-api-key": key },
+          signal: AbortSignal.timeout(8_000), redirect: "error", cache: "no-store",
+        });
+        if (response.ok) {
+          const data: unknown = await response.json();
+          if (data && typeof data === "object" && "address" in data && typeof data.address === "string"
+              && addressSchema.safeParse(data.address).success) {
+            return { name, address: data.address.toLowerCase(), record: "ethereum" };
+          }
+        }
+      } catch { /* Fall back to the ENS provider's actionable error. */ }
+    }
     if (error instanceof Error && error.message === "This ENS name has no EVM address record.") throw error;
-    throw new Error("ENS lookup is unavailable. Check the name or try a 0x address.");
+    throw new Error("ENS lookup unavailable through Ethereum RPC and OpenSea. Check ENS_RPC_URL or use a 0x address.");
   }
 }

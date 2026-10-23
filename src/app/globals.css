@@ -1775,3 +1775,19 @@ td small {
   .personal-footer{flex-direction:column;gap:8px}
   .personal-collection-row strong,.personal-trade-row strong{font-size:12px}
 }
+
+/* Public OpenSea identity on the connected-wallet dashboard */
+.personal-identity{display:flex;align-items:center;gap:17px;margin:19px 0 10px;min-width:0}
+.personal-identity>div:last-child{min-width:0}
+.personal-identity h1{margin:0 0 7px;overflow-wrap:anywhere;font-size:clamp(26px,3.5vw,43px)}
+.personal-identity p{margin:0;color:#b9aad5!important;font-size:14px;overflow-wrap:anywhere}
+.personal-avatar{width:66px;height:66px;flex:none;border-radius:18px;object-fit:cover;border:1px solid #735c99;box-shadow:0 0 30px #9456ec40}
+.personal-avatar-placeholder{display:grid;place-items:center;background:#33254b;color:#bca1f0}
+.personal-verified{font-size:18px;color:#65d6ff;vertical-align:middle}
+.personal-profile-status{font-size:12px!important;color:#aa9abd!important}
+.personal-bio{font-size:13px!important;color:#c8c0d9!important;overflow-wrap:anywhere;max-width:800px!important}
+.personal-biggest{border-color:#5b417a!important;background:linear-gradient(140deg,#221630,#151420)!important}
+.personal-dashboard .personal-panels{grid-template-columns:repeat(3,minmax(0,1fr))}
+.personal-dashboard .personal-trade-row>strong:last-child{white-space:nowrap}
+@media(max-width:1100px){.personal-dashboard .personal-panels{grid-template-columns:1fr 1fr}.personal-activity{grid-column:1/-1}}
+@media(max-width:720px){.personal-dashboard .personal-panels{grid-template-columns:1fr}.personal-activity{grid-column:auto}.personal-identity{align-items:flex-start;gap:12px}.personal-avatar{width:51px;height:51px;border-radius:13px}}

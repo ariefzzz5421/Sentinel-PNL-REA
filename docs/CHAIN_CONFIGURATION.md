@@ -4,7 +4,7 @@
 
 | Network | ID | Native gas | Wallet network | NFT PnL scan |
 | --- | ---: | --- | --- | --- |
-| Ethereum | 1 | ETH | Privy when configured | Reservoir key required |
+| Ethereum | 1 | ETH | Privy when configured | OpenSea key required |
 | Base | 8453 | ETH | Privy when configured | Reservoir key required |
 | Arbitrum | 42161 | ETH | Privy when configured | Reservoir key required |
 | Robinhood Chain | 4663 | ETH | Privy when configured | Not integrated; explicit 503 |

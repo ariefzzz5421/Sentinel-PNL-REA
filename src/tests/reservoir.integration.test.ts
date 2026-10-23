@@ -43,20 +43,17 @@ describe("Reservoir activity adapter", () => {
     const url = fetcher.mock.calls[0][0] as URL;
     expect(url.hostname).toBe(`api-${chain}.reservoir.tools`);
   });
-  it("runs Scan API → adapter → PnL with no fabricated fees", async () => {
-    const { fetcher } = mockPages();
-    process.env.RESERVOIR_API_KEY = "fixture-key";
-    vi.stubGlobal("fetch", fetcher);
+  it("refuses the retired Reservoir provider in the public Scan API", async () => {
+    process.env.RESERVOIR_API_KEY = "legacy-key";
+    delete process.env.OPENSEA_API_KEY;
     const request = new Request("http://localhost/api/scan", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input),
     });
     const response = await POST(request);
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     const body = await response.json();
-    const pnl = calculatePnl(body.events);
-    expect(body.partial).toBe(true);
-    expect(pnl.realizedEth).toBe("0.5");
-    expect(pnl.estimatedSales).toBe(1);
+    expect(body.error).toContain("Reservoir");
+    expect(body.error).toContain("OPENSEA_API_KEY");
   });
   it("returns a rate-limit error without partial financial data", async () => {
     const fetcher = vi.fn(async () => new Response("", { status: 429 }));
