@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowUpRight, Download, Images, Info, Share2, X, Copy, Check } from "lucide-react";
+import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
+import { PnlCardStudio } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
 
@@ -76,45 +77,11 @@ function downloadCsv(rows: CollectionRow[]) {
   a.href = href; a.download = "sentinel-pnl-collections.csv";
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(href);
 }
-function drawCard(canvas: HTMLCanvasElement, row: CollectionRow, wallet: string, partial: boolean) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas graphics are unavailable.");
-  canvas.width = 1200; canvas.height = 630;
-  const backdrop = ctx.createLinearGradient(0, 0, 1200, 630);
-  backdrop.addColorStop(0, "#100f21"); backdrop.addColorStop(1, "#29173f");
-  ctx.fillStyle = backdrop; ctx.fillRect(0, 0, 1200, 630);
-  ctx.strokeStyle = "#554179"; ctx.lineWidth = 3; ctx.strokeRect(30, 30, 1140, 570);
-  ctx.fillStyle = "#b99cff"; ctx.font = "bold 30px Arial"; ctx.fillText("◈  SENTINEL PNL", 78, 110);
-  ctx.fillStyle = "#a9a1c4"; ctx.font = "24px Arial"; ctx.fillText(row.chain.toUpperCase() + " · NFT PERFORMANCE", 79, 165);
-  ctx.fillStyle = "#f8f5ff"; ctx.font = "bold 54px Arial";
-  const name = row.name.length > 29 ? row.name.slice(0, 28) + "…" : row.name;
-  ctx.fillText(name, 75, 270);
-  ctx.fillStyle = row.pnl === null ? "#afa6c7" : Number(row.pnl) >= 0 ? "#3ee0ae" : "#ff8d9f";
-  ctx.font = "bold 80px Arial"; ctx.fillText(formatEth(row.pnl) + " ETH", 75, 382);
-  ctx.font = "22px Arial"; ctx.fillStyle = "#ac9fce";
-  ctx.fillText("ESTIMATED REALIZED PNL" + (partial ? " · PARTIAL HISTORY" : ""), 80, 425);
-  ctx.fillStyle = "#ede8ff"; ctx.font = "bold 30px Arial";
-  ctx.fillText("BOUGHT   " + row.bought, 78, 510);
-  ctx.fillText("SOLD   " + row.sold, 420, 510);
-  ctx.fillText("HOLD   " + (row.held ?? "—"), 720, 510);
-  ctx.font = "19px Arial"; ctx.fillStyle = "#9c91b5";
-  const address = wallet && wallet !== "multiple wallets" ? wallet.slice(0, 8) + "…" + wallet.slice(-6) : "Multiple wallets";
-  ctx.fillText(address + "  ·  Missing history, fees or cost basis may change results.", 78, 562);
-}
-async function pngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Cannot export PNG.")), "image/png");
-  });
-}
-
 export function ScanResults({
   events, holdings, holdingsComplete, partial, warning, address,
 }: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
-  const [sharing, setSharing] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const rows = useMemo(() => collectionRows(events.filter((event) => address === null ||
     event.wallet.toLowerCase() === address.toLowerCase()), holdings, holdingsComplete), [events, holdings, holdingsComplete, address]);
   const shown = useMemo(() => {
@@ -135,39 +102,6 @@ export function ScanResults({
     return () => document.removeEventListener("keydown", handleKey);
   }, [activeKey]);
 
-  async function saveOrShare(share: boolean) {
-    if (!selected || !canvasRef.current) return;
-    setSharing(true);
-    try {
-      drawCard(canvasRef.current, selected, address || "multiple wallets", partial);
-      const blob = await pngBlob(canvasRef.current);
-      const file = new File([blob], "sentinel-pnl-card.png", { type: "image/png" });
-      if (share && typeof navigator.share === "function" &&
-          typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Sentinel PNL — " + selected.name });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url; anchor.download = file.name;
-        document.body.appendChild(anchor); anchor.click(); anchor.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        window.alert(error instanceof Error ? error.message : "Could not export PnL image.");
-      }
-    } finally { setSharing(false); }
-  }
-  async function copyAddress() {
-    if (!selected?.contract) return;
-    try {
-      await navigator.clipboard.writeText(selected.contract);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   return <section className="scan-results" aria-label="NFT collection scan results">
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">
       <button type="button" aria-pressed={filter === "recent"} className={filter === "recent" ? "active" : ""} onClick={() => setFilter("recent")}>Recent</button>
@@ -180,7 +114,7 @@ export function ScanResults({
       <p>{warning || "Fees, mints, transfers and unmatched sales may change realized PnL."}</p></details>}
     {shown.length ? <div className="scan-results-grid">
       {shown.map((row) => <article className="scan-collection-card" key={row.key}>
-        <button type="button" className="scan-card-open" onClick={() => { setActiveKey(row.key); setCopied(false); }}
+        <button type="button" className="scan-card-open" onClick={() => { setActiveKey(row.key); }}
           aria-label={"Open " + row.name + " PnL details and sharing"}>
           <div className="scan-collection-heading">
             {row.image
@@ -196,7 +130,7 @@ export function ScanResults({
             <div><span>HOLD</span><strong>{row.held ?? "—"}</strong></div>
           </div>
         </button>
-        <button type="button" className="scan-card-share" onClick={() => { setActiveKey(row.key); setCopied(false); }}>
+        <button type="button" className="scan-card-share" onClick={() => { setActiveKey(row.key); }}>
           <Share2 size={14}/> PnL card <ArrowUpRight size={13}/>
         </button>
       </article>)}
@@ -206,21 +140,10 @@ export function ScanResults({
     {selected && <div className="scan-modal-backdrop" role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setActiveKey(null);
     }}>
-      <div className="scan-detail-modal" role="dialog" aria-modal="true" aria-label={selected.name + " NFT PnL"} >
+      <div className="scan-detail-modal studio-modal" role="dialog" aria-modal="true" aria-label={selected.name + " NFT PnL"}>
         <div className="scan-modal-head"><div><span>COLLECTION PERFORMANCE</span><h2>{selected.name}</h2></div>
           <button type="button" aria-label="Close details" className="scan-modal-close" onClick={() => setActiveKey(null)}><X size={20}/></button></div>
-        <div className="scan-pnl-poster">
-          <div className="scan-poster-brand">◈ SENTINEL PNL <span>{selected.chain.toUpperCase()}</span></div>
-          <p>{selected.name}</p>
-          <strong className={selected.pnl === null ? "unknown" : Number(selected.pnl) >= 0 ? "positive" : "negative"}>{formatEth(selected.pnl)} ETH</strong>
-          <small>ESTIMATED REALIZED PNL {partial ? "· PARTIAL HISTORY" : ""}</small>
-          <div className="scan-poster-stats"><div>BOUGHT <b>{selected.bought}</b></div><div>SOLD <b>{selected.sold}</b></div><div>HOLD <b>{selected.held ?? "—"}</b></div></div>
-        </div>
-        <div className="scan-modal-actions">
-          <button type="button" disabled={sharing} onClick={() => void saveOrShare(true)}><Share2 size={16}/> {sharing ? "Creating…" : "Share PNG"}</button>
-          <button type="button" disabled={sharing} onClick={() => void saveOrShare(false)}><Download size={16}/> Download</button>
-          <button type="button" disabled={!selected.contract} onClick={() => void copyAddress()}>{copied ? <Check size={16}/> : <Copy size={16}/>} Contract</button>
-        </div>
+        <PnlCardStudio row={selected} wallet={address} partial={partial} onBack={() => setActiveKey(null)}/>
         <div className="scan-modal-transactions"><h3>Recent recorded trades <span>{selected.trades.length}</span></h3>
           {selected.trades.length ? selected.trades.slice(0, 12).map((trade) =>
             <div className="scan-trade" key={trade.id}><div><b>{trade.type.toUpperCase()}</b><span>#{trade.tokenId} · {new Date(trade.date).toLocaleDateString()}</span></div>
@@ -228,8 +151,6 @@ export function ScanResults({
                 rel="noopener noreferrer" target="_blank" aria-label="View transaction"><ArrowUpRight size={15}/></a>}</div></div>)
             : <p className="scan-no-trades">No priced sales recorded in the scanned window.</p>}
         </div>
-        <p className="scan-modal-disclaimer">PnL excludes unavailable cost basis, gas, and some payment currencies. It is an estimate, not tax reporting.</p>
-        <canvas ref={canvasRef} className="visually-hidden" aria-hidden="true"/>
       </div>
     </div>}
   </section>;
