@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Download, Images, Info, Share2, X, Copy, Check } from "lucide-react";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
@@ -125,6 +125,15 @@ export function ScanResults({
   }, [filter, rows]);
   const selected = rows.find((row) => row.key === activeKey) || null;
 
+  useEffect(() => {
+    if (!activeKey) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveKey(null);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [activeKey]);
+
   async function saveOrShare(share: boolean) {
     if (!selected || !canvasRef.current) return;
     setSharing(true);
@@ -140,7 +149,7 @@ export function ScanResults({
         const anchor = document.createElement("a");
         anchor.href = url; anchor.download = file.name;
         document.body.appendChild(anchor); anchor.click(); anchor.remove();
-        URL.revokeObjectURL(url);
+        window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
       }
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
