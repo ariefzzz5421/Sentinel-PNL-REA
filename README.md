@@ -58,7 +58,7 @@ The advanced manual/CSV workspace is still available at `/dashboard`; it is no l
 
 Set `OPENSEA_API_KEY` in Vercel > Project > Settings > Environment Variables for **Production**, then redeploy. This is the server-side key for both `GET /api/opensea/profile?address=0x…` and `POST /api/scan`. `NEXT_PUBLIC_PRIVY_APP_ID` remains a separate **public** key for wallet authentication. Never put the OpenSea secret in a public environment variable, browser, repository, or screenshot. Old `RESERVOIR_API_KEY` does not enable new live scans and should be removed.
 
-Upon wallet connection, `/profile` fetches public OpenSea name, avatar, banner and bio, then attempts Ethereum, Base and Arbitrum activity scans. It shows the latest priced buy/sell events and ranks positive realized PnL only for matched NFT purchases and sales. Historic gas, marketplace fees, unsupported ERC-20 payments and some mints/transfers cannot be reconstructed and are not invented. The first 400 sale events **per chain** are scanned at most; pagination truncation and unsupported records are surfaced to the user. A wallet not having an OpenSea profile does not stop public address scanning. Scans require an actual API key and live endpoint verification; passing synthetic tests does not certify live accuracy.
+Upon wallet connection, `/profile` fetches public OpenSea name, avatar, banner and bio, then attempts Ethereum, Base and Arbitrum activity scans. It shows the latest priced buy/sell events and ranks positive realized PnL only for matched NFT purchases and sales. Historic gas, marketplace fees, unsupported ERC-20 payments and some mints/transfers cannot be reconstructed and are not invented. The first 1,200 sale events **per chain** are scanned at most; pagination truncation and unsupported records are surfaced to the user. A wallet not having an OpenSea profile does not stop public address scanning. Scans require an actual API key and live endpoint verification; passing synthetic tests does not certify live accuracy.
 
 OpenSea references:
 - https://docs.opensea.io/reference/get_account
@@ -78,3 +78,12 @@ Sources of truth are different:
 A configured `OPENSEA_API_KEY` is still necessary for live data. Verify it safely via `/api/status`, which exposes **configuration booleans only, never secrets**. For developer diagnostics, inspect the response/status of `POST /api/scan` in the browser network panel.
 
 The personal profile route `/profile` stays internal. The previously misleading external 'OpenSea profile' header CTA has been replaced with an internal scanner link.
+
+ 
+## Mobile PnL cards & collection interactions
+
+The public scan page shows compact per-collection cards. Tap any collection to view its own recorded trades and a preview of a shareable **estimated** PnL image. `Share PNG` uses the mobile Web Share API when supported; otherwise it downloads a PNG. `Download` always exports the image. The card is generated locally from already retrieved wallet data, so no secret or signed transaction is required. The card labels partial history and estimates explicitly.
+
+NFT scans now request up to 6 cursor pages of 200 sale events per chain. This increases coverage but does **not** recover unknown mints, gas, unsupported ERC-20 payments, or events beyond the limit. Buying 15 vs 16 NFTs at a reference site can reflect different event coverage, not just a frontend issue. Holdings with uncertain counts stay unverified, not hardcoded as zero. Chain icons are small self-contained vector symbols based on public network branding; logos do not imply affiliation.
+
+Mobile changes: compact wallet / ENS placeholder, smaller contract actions, scrollable chain selector, simplified scan status, and collection results immediately below the form (no intervening workspace card).
