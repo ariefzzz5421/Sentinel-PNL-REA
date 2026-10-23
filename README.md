@@ -64,3 +64,17 @@ OpenSea references:
 - https://docs.opensea.io/reference/get_account
 - https://docs.opensea.io/reference/list_events_by_account
 - https://docs.opensea.io/reference/api-keys
+
+
+## Collection-first scan results (reference-based reconstruction)
+
+The public scanner at `/` now retains successful results **inline** rather than redirecting to `/dashboard`. The UI provides Recent / Best PNL / Holding filters, per-collection Bought / Sold / Hold, estimated realized ETH PnL, collection images when public metadata is available, and CSV export. No claims of exact KoalaTools backend equivalence are made.
+
+Sources of truth are different:
+- Buy/sell counts and matched realized PnL: priced single-quantity ETH/WETH OpenSea account sale events, capped at four pages per selected chain.
+- Hold (current quantity) and collection thumbnail: OpenSea wallet owned-collections endpoint. Multi-contract collection quantities remain unknown instead of double-counted.
+- Mints, ERC-1155 batch purchases, non-ETH currency payments, gas/fees, and history before the scan window can be missing; unknown cost basis is never shown as a zero-cost profit.
+
+A configured `OPENSEA_API_KEY` is still necessary for live data. Verify it safely via `/api/status`, which exposes **configuration booleans only, never secrets**. For developer diagnostics, inspect the response/status of `POST /api/scan` in the browser network panel.
+
+The personal profile route `/profile` stays internal. The previously misleading external 'OpenSea profile' header CTA has been replaced with an internal scanner link.
