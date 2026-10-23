@@ -109,7 +109,8 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const aliasText = alias.trim().slice(0, 32);
   const walletLabel = wallet && wallet.length > 15 ? wallet.slice(0, 7) + "…" + wallet.slice(-5) : "Public wallet";
   const imageSize = cardSize === "image" && background ? Math.min(1.85, Math.max(0.85, backgroundRatio)) : 1200 / 700;
-  const canvasHeight = Math.round(1200 / imageSize);
+  const minimumHeight = mode === "complete" ? 1080 : 650;
+  const canvasHeight = cardSize === "image" && background ? Math.max(minimumHeight, Math.round(1200 / imageSize)) : minimumHeight;
 
   async function render(target: HTMLCanvasElement) {
     const c = target.getContext("2d");
