@@ -1,3 +1,11 @@
+# Latest integration update — OpenSea
+
+- Implemented server-side OpenSea NFT sale event adapter and public account profile endpoint, plus frontend name/avatar/banner and top matched realized PnL.
+- Connected-wallet dashboard scans Ethereum, Base, Arbitrum automatically per browser session and supports manual refresh.
+- Requires `OPENSEA_API_KEY` in Vercel Production to provide live data; an unavailable or expired key is reported clearly.
+- Unit tests with synthetic responses cover sales, pagination, invalid currencies and key rejection. **No credentialed real OpenSea API scan verified yet.**
+- Data limits: max 400 sale events per chain per request, ERC-721/native ETH/WETH priced sales only; fees and transfers/mints without verifiable cost basis remain unknown.
+
 # Implementation status
 
 ## Implemented and locally testable
