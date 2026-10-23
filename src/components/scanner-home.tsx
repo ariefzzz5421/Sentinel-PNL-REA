@@ -85,9 +85,9 @@ export function ScannerHome() {
   }
   return <div className="scanner-page">
     <header className="scanner-header">
-      <Link href="/" className="scanner-brand"><Image src="/icon.svg" width={30} height={30} alt=""/><span>SENTINEL PNL</span></Link>
+      <Link href="/" className="scanner-brand"><Image src="/sentinel-logo.svg" width={38} height={40} alt="Sentinel logo"/><span>SENTINEL PNL</span></Link>
       <a href="#scanner" className="scanner-nav">Scans</a>
-      <div className="scanner-header-actions"><WalletConnectControl/><Link href="/dashboard" className="scanner-ledger-link">My ledger <ArrowRight size={15}/></Link></div>
+      <div className="scanner-header-actions"><WalletConnectControl/></div>
     </header>
     <div className="scanner-layout">
       <aside className="scanner-side scanner-side-left" aria-label="Local workspace">
