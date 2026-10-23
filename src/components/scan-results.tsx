@@ -34,7 +34,7 @@ function formatEth(value: string | null): string {
   if (!Number.isFinite(amount)) return "—";
   return (amount > 0 ? "+" : "") + amount.toFixed(4);
 }
-function collectionRows(events: TradeEvent[], holdings: PublicHolding[]): CollectionRow[] {
+function collectionRows(events: TradeEvent[], holdings: PublicHolding[], holdingsComplete: boolean): CollectionRow[] {
   const groups = new Map<string, TradeEvent[]>();
   for (const event of events) {
     const key = event.chain + ":" + (event.contract || event.collection).toLowerCase();
@@ -56,7 +56,7 @@ function collectionRows(events: TradeEvent[], holdings: PublicHolding[]): Collec
       chain: (first?.chain || holding?.chain || "ethereum") as Chain,
       contract: first?.contract || holding?.contract || "",
       image: safeImage(holding?.imageUrl || first?.imageUrl),
-      bought: summary.buys, sold: summary.sells, held: holding?.held ?? null,
+      bought: summary.buys, sold: summary.sells, held: holding ? holding.held : holdingsComplete ? 0 : null,
       pnl: matched > 0 ? summary.realizedEth : null,
       latest, unknown: summary.unknownBasisSales,
       estimated: summary.estimatedSales > 0,
@@ -107,15 +107,15 @@ async function pngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 }
 
 export function ScanResults({
-  events, holdings, partial, warning, address,
-}: { events: TradeEvent[]; holdings: PublicHolding[]; partial: boolean; warning: string; address: string | null }) {
+  events, holdings, holdingsComplete, partial, warning, address,
+}: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rows = useMemo(() => collectionRows(events.filter((event) => address === null ||
-    event.wallet.toLowerCase() === address.toLowerCase()), holdings), [events, holdings, address]);
+    event.wallet.toLowerCase() === address.toLowerCase()), holdings, holdingsComplete), [events, holdings, holdingsComplete, address]);
   const shown = useMemo(() => {
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
       .sort((a, b) => (b.held || 0) - (a.held || 0));
