@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   let cursor: string | undefined;
   let partial = false;
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 6; i++) {
     const url = new URL(`https://api.opensea.io/api/v2/account/${address}/collections`);
     url.searchParams.set("limit", "50");
     if (cursor) url.searchParams.set("after", cursor);
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     if (!parsed.data.next) break;
     if (cursor === parsed.data.next) return NextResponse.json({ error: "Repeated OpenSea holdings cursor." }, { status: 502 });
     cursor = parsed.data.next;
-    if (i === 2) partial = true;
+    if (i === 5) partial = true;
   }
   return NextResponse.json({ holdings: entries, partial, warning: partial ? "Holdings list is paginated and may be incomplete." : undefined },
     { headers: { "Cache-Control": "private, no-store" } });
