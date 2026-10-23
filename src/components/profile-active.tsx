@@ -44,15 +44,24 @@ export default function ActiveProfile() {
   const [profileStatus, setProfileStatus] = useState("");
 
   useEffect(() => {
-    setEvents(readLedger());
-    setHydrated(true);
+    queueMicrotask(() => {
+      setEvents(readLedger());
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {
-    if (!ready || !authenticated || !address) { setProfile(null); return; }
+    if (!ready || !authenticated || !address) {
+      queueMicrotask(() => setProfile(null));
+      return;
+    }
     let canceled = false;
-    setProfile(null);
-    setProfileStatus("Loading OpenSea public profile…");
+    queueMicrotask(() => {
+      if (!canceled) {
+        setProfile(null);
+        setProfileStatus("Loading OpenSea public profile…");
+      }
+    });
     void fetch("/api/opensea/profile?address=" + encodeURIComponent(address))
       .then(async (response) => {
         const data: unknown = await response.json();
@@ -141,7 +150,11 @@ export default function ActiveProfile() {
     } catch {
       return;
     }
-    void scanWallet(address, chain);
+    let canceled = false;
+    queueMicrotask(() => {
+      if (!canceled) void scanWallet(address, chain);
+    });
+    return () => { canceled = true; };
   }, [ready, authenticated, hydrated, address, chain, scanWallet]);
 
   if (!ready || !hydrated) {
