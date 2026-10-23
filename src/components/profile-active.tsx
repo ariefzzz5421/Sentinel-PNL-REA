@@ -73,6 +73,7 @@ export default function ActiveProfile() {
   );
   const summary = useMemo(() => calculatePnl(personal), [personal]);
   const knownSales = summary.sells - summary.unknownBasisSales;
+  const hasSnapshot = personal.length > 0 || hasScanned;
   const hasKnownPnl = knownSales > 0;
   const winRate = summary.wins + summary.losses
     ? Math.round((summary.wins / (summary.wins + summary.losses)) * 100)
@@ -133,7 +134,7 @@ export default function ActiveProfile() {
   // One scan per wallet/chain per browser session after login; manual refresh is always available.
   useEffect(() => {
     if (!ready || !authenticated || !hydrated || !address) return;
-    const key = `sentinel-profile-autoscan-v1:${chain}:${address}`;
+    const key = `sentinel-profile-autoscan-v2:${chain}:${address}`;
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
@@ -207,9 +208,9 @@ export default function ActiveProfile() {
           <span className="personal-pnl-meta">{summary.unknownBasisSales} sale(s) with unknown cost basis · {summary.estimatedSales} sale(s) with estimated fees</span>
         </section>
         <div className="personal-stat-grid">
-          <section><span>Purchases + mints</span><strong>{summary.buys}</strong><small>Supported NFT acquisitions</small></section>
-          <section><span>Sales</span><strong>{summary.sells}</strong><small>Recorded sale events</small></section>
-          <section><span>Open positions</span><strong>{summary.openPositions}</strong><small>Based on matched ledger events</small></section>
+          <section><span>Purchases (supported)</span><strong>{hasSnapshot ? summary.buys : "—"}</strong><small>Supported NFT acquisitions</small></section>
+          <section><span>Sales</span><strong>{hasSnapshot ? summary.sells : "—"}</strong><small>Recorded sale events</small></section>
+          <section><span>Open positions</span><strong>{hasSnapshot ? summary.openPositions : "—"}</strong><small>Based on matched ledger events</small></section>
           <section><span>Win rate</span><strong>{winRate === null ? "—" : `${winRate}%`}</strong><small>Only matched profitable/loss-making sales</small></section>
         </div>
       </div>
