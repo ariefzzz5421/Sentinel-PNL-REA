@@ -36,6 +36,8 @@ export const eventSchema = z.object({
     .regex(/^0x[a-fA-F0-9]{40}$/)
     .optional(),
   tokenId: z.string().trim().min(1).max(100),
+  /** Public image metadata is optional; never used for PnL calculations. */
+  imageUrl: z.string().url().max(1800).optional(),
   type: z.enum(["buy", "mint", "sell"]),
   amountEth: z.string().regex(/^\d+(\.\d{1,18})?$/),
   feeEth: z.string().regex(/^\d+(\.\d{1,18})?$/),

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowRight, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { eventsSchema, type Chain, type TradeEvent } from "@/lib/schema";
 import { calculatePnl } from "@/lib/pnl/calculate";
@@ -187,7 +187,7 @@ export default function ActiveProfile() {
           {profile?.bio ? <p className="personal-bio">{profile.bio}</p> : <p>Personal NFT performance. Historical realized PnL is estimated when fees are unavailable.</p>}
           {profileStatus && <p className="personal-profile-status">{profileStatus}</p>}
         </div>
-        {address && <a className="personal-explorer" target="_blank" rel="noopener noreferrer" href={"https://opensea.io/" + (profile?.username ? encodeURIComponent(profile.username) : address)}>OpenSea profile <ArrowUpRight size={15}/></a>}
+        {address && <Link className="personal-explorer" href="/">Scan another wallet <ArrowRight size={15}/></Link>}
       </div>
       {addresses.length ? <div className="profile-wallets" role="group" aria-label="Your connected wallets">
         {addresses.map((item) => <button key={item} type="button" className={item === address ? "active" : ""}
