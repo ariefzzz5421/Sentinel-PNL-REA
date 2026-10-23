@@ -4,7 +4,7 @@
 
 `GET /api/opensea/profile?address=...` uses `GET /api/v2/accounts/{address}` and exposes only publicly available, sanitized avatar/banner/display name/username/ENS/bio/verification. An OpenSea public profile does not require Privy login, and Privy login does not confer OpenSea session/account access. The viewer only sees a profile for their connected address.
 
-`RESERVOIR_API_KEY` is maintained only for compatibility with older deployments; the currently active OpenSea key takes precedence. Refer to official current OpenSea docs: https://docs.opensea.io/reference/api-keys, https://docs.opensea.io/reference/list_events_by_account and https://docs.opensea.io/reference/get_account.
+`RESERVOIR_API_KEY` refers to a deprecated legacy adapter and is deliberately not used for new live scans. An optional custom `SENTINEL_PROVIDER_URL`/`SENTINEL_PROVIDER_API_KEY` pair remains for existing owner-controlled normalized providers. Refer to official current OpenSea docs: https://docs.opensea.io/reference/api-keys, https://docs.opensea.io/reference/list_events_by_account and https://docs.opensea.io/reference/get_account.
 
 ## Legacy integrations
 
