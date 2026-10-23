@@ -5,7 +5,6 @@ import {
   eventsSchema,
   type TradeEvent,
 } from "@/lib/schema";
-import { getReservoirEvents } from "./reservoir";
 import { getOpenSeaEvents } from "./opensea";
 
 const requestSchema = z.object({
@@ -46,8 +45,9 @@ export async function getProviderEvents(
   const apiKey = process.env.SENTINEL_PROVIDER_API_KEY;
   const openSeaKey = process.env.OPENSEA_API_KEY;
   if (openSeaKey) return getOpenSeaEvents(input, openSeaKey);
-  const reservoirKey = process.env.RESERVOIR_API_KEY;
-  if (reservoirKey) return getReservoirEvents(input, reservoirKey);
+  // The former Reservoir NFT API should not be selected implicitly.
+  if (process.env.RESERVOIR_API_KEY && (!endpoint || !apiKey))
+    throw new ProviderError("Reservoir NFT API is no longer the supported live provider. Set OPENSEA_API_KEY in Vercel Production and redeploy.", 503);
   if (!endpoint || !apiKey)
     throw new ProviderError(
       "NFT scanning is not configured. Add OPENSEA_API_KEY to the Vercel Production environment and redeploy.",
