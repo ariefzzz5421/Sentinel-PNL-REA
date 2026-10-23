@@ -47,7 +47,7 @@ export function ScannerHome() {
     setResultWarning("");
     const selected = scanChainById(chain);
     if (!selected.scanReady) {
-      setMessage(`${selected.label} network is configured (chain ${selected.chainId}), but NFT scan data is not connected yet. Add a compatible activity provider before scanning; RPC alone cannot calculate PnL.`);
+      setMessage(`${selected.label} network is configured (chain ${selected.chainId}), but is available on OpenSea, but Sentinel cannot calculate USDC-native NFT PnL for this chain yet. No ETH-denominated results will be fabricated.`);
       setError(true);
       return;
     }
@@ -127,11 +127,11 @@ export function ScannerHome() {
       </aside>
       <main className="scanner-main" id="scanner">
         <div className="scanner-chains" role="group" aria-label="Blockchain">
-          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => setChain(item.id)} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : `${item.label}: network configured, NFT scan pending data provider`}>{"icon" in item ? <Image src={item.icon} width={19} height={19} alt=""/> : <span>●</span>}{item.label}{!item.scanReady && <small>soon</small>}</button>)}
+          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => setChain(item.id)} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : `${item.label}: supported network, USDC-native PnL not implemented` }>{"icon" in item ? <Image src={item.icon} width={19} height={19} alt=""/> : <span>●</span>}{item.label}</button>)}
         </div>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
-          <p>Paste a public wallet. See supported buys, mints, sales and estimated realized profit.</p>
+          <p>Scan NFT buys and sales across supported networks. Estimated PnL uses available priced events.</p>
         </div>
         <section className="scanner-form" aria-label="Wallet scanner">
           <div className="scanner-primary-row">
