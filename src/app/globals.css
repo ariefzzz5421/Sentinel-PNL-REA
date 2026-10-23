@@ -1916,3 +1916,55 @@ td small {
   .scan-modal-actions{display:grid;grid-template-columns:1fr 1fr}
   .scan-modal-actions button:last-child{grid-column:1/-1}
 }
+
+
+/* 2026-10: compact navigation + shareable PnL Studio */
+.scanner-chains{gap:11px;padding:8px 12px;min-height:57px;justify-content:flex-start}
+.scanner-chains button{flex:none;gap:8px!important;min-height:39px;padding:10px 15px!important;letter-spacing:.025em}
+.scanner-chains button img{width:21px;height:21px;object-fit:contain;flex:none}
+.scanner-chains button[aria-pressed="true"]{border-radius:10px}
+.studio-modal{width:min(100%,720px);max-height:min(94dvh,960px);padding:18px 24px 26px}
+.pnl-studio{min-width:0}
+.studio-back{border:1px solid #433759;background:#1b1729;border-radius:11px;color:#c4b7dd;width:100%;padding:13px;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:650}
+.studio-choice-bar{display:grid;grid-template-columns:1fr;gap:15px;margin:16px 0}
+.studio-segment{display:inline-flex;gap:0;border:1px solid #514268;border-radius:13px;overflow:hidden;width:fit-content}
+.studio-segment button{border:0;background:#191525;color:#aba0c0;padding:11px 20px;font-weight:740;font-size:13px}
+.studio-segment button.active{background:#403155;color:#e5ccff}
+.studio-segment button:disabled{opacity:.4}
+.studio-controls{display:flex;align-items:stretch;gap:9px;flex-wrap:wrap}
+.studio-controls button{border:1px solid #483952;border-radius:12px;background:#1b1828;color:#c9bedb;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 13px;font-size:12px;font-weight:720;min-height:43px;flex:1}
+.studio-controls button:disabled{opacity:.53;cursor:not-allowed}
+.studio-controls .studio-x{background:#4dc2eb;color:#09111d;border-color:#53caf4;flex:1.2}
+.studio-download{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1px solid #52dbed;color:#070f19;background:linear-gradient(100deg,#51c2f1,#08ce82);border-radius:12px;padding:13px;margin:0 0 16px;font-size:16px;font-weight:840}
+.studio-rendered{border:1px solid #322b4e;background:#080812;border-radius:11px;overflow:hidden;line-height:0}
+.studio-rendered canvas{width:100%;height:auto;display:block}
+.studio-export-actions button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#211a32;border:1px solid #594271;border-radius:10px;color:#e8dffc;padding:12px;margin:13px 0 17px;font-weight:700}
+.studio-custom{border:1px solid #594373;border-radius:18px;padding:19px;background:#151221;margin:20px 0 12px}
+.studio-custom>summary{cursor:pointer;color:#bc99f5;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.studio-fields{display:grid;gap:17px;padding-top:19px}
+.studio-fields label,.studio-fields>div{display:grid;gap:8px;font-size:12px;font-weight:700;color:#b4a9c8}
+.studio-fields input[type="text"],.studio-fields select{border:1px solid #342c47;background:#0c0a16;color:#f7f2ff;border-radius:11px;min-height:43px;padding:10px 12px;outline:none}
+.studio-fields select{max-width:240px}
+.studio-fields input[type="text"]:focus,.studio-fields select:focus{border-color:#9c83d8}
+.studio-control-row{display:flex;align-items:center;gap:8px}
+.studio-control-row button{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #504061;border-radius:11px;background:#211b2e;color:#ddd1ed;font-size:12px}
+.studio-range{display:flex;align-items:center;gap:13px}
+.studio-range input{accent-color:#58c6f6;flex:1;max-width:430px;cursor:pointer}
+.studio-range span{font-size:12px;white-space:nowrap}
+.studio-caveat{color:#a89ab7;line-height:1.65;font-size:11px;margin:14px 0}
+.studio-notice{background:#221b34;border:1px solid #654f79;border-radius:9px;padding:10px 13px;font-size:12px;line-height:1.5;color:#c9c0da}
+.studio-fields button:focus-visible,.studio-choice-bar button:focus-visible,.studio-download:focus-visible,.studio-back:focus-visible{outline:2px solid #79d8fd;outline-offset:2px}
+@media(max-width:600px){
+  .scanner-chains{gap:7px;min-height:54px;padding:7px 8px}
+  .scanner-chains button{gap:5px!important;padding:8px 11px!important;min-height:39px;font-size:12px}
+  .scanner-chains button img{width:19px;height:19px}
+  .studio-modal{width:100%;padding:13px;max-height:calc(100dvh - 12px)}
+  .studio-choice-bar{gap:13px}
+  .studio-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .studio-controls button{padding:10px 6px;font-size:11px}
+  .studio-controls .studio-x{grid-column:1/-1}
+  .studio-segment{max-width:100%}
+  .studio-segment button{padding:11px 15px}
+  .studio-custom{padding:14px}
+  .studio-rendered canvas{width:100%;max-width:100%}
+}
