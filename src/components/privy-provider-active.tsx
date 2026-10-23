@@ -14,7 +14,7 @@ const robinhood = defineChain({
 export default function ActivePrivyProvider({ children, appId }: { children: ReactNode; appId: string }) {
   return <PrivyProvider appId={appId} config={{
     loginMethods: ["wallet"],
-    appearance: { theme: "dark", accentColor: "#a987f5", logo: "/icon.svg" },
+    appearance: { theme: "dark", accentColor: "#a987f5", logo: "/sentinel-logo.svg" },
     supportedChains: [mainnet, base, arbitrum, robinhood, arc],
     embeddedWallets: { ethereum: { createOnLogin: "off" } },
   }}>{children}</PrivyProvider>;
