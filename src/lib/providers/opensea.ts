@@ -22,6 +22,7 @@ const nftSchema = z.object({
   collection: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   token_standard: z.string().nullable().optional(),
+  image_url: z.string().nullable().optional(),
 });
 const paymentSchema = z.object({
   quantity: z.string().regex(/^\d+$/),
@@ -90,6 +91,7 @@ function fromSale(raw: unknown, request: ScanRequest): TradeEvent | null {
     wallet,
     contract,
     tokenId: String(event.nft.identifier),
+    imageUrl: event.nft.image_url?.startsWith("https://") ? event.nft.image_url : undefined,
     collection: event.nft.collection || event.nft.name || `${contract.slice(0, 10)}…`,
     type,
     amountEth: value,
