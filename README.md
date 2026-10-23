@@ -43,3 +43,12 @@ example-sell,2026-02-01T00:00:00Z,ethereum,0x00000000000000000000000000000000000
 - [Chain and wallet setup](docs/CHAIN_CONFIGURATION.md)
 
 Wallet connection is optional. No transaction signing, private key export, or transaction execution is implemented. All displayed PnL is an estimate and is not financial or tax advice.
+
+
+## Connected wallet: personal PnL dashboard
+
+When `NEXT_PUBLIC_PRIVY_APP_ID` is configured and the production origin is allowed in Privy, the homepage **Connect Wallet** button opens wallet login. A new successful login routes to `/profile`, a read-only one-page dashboard for the selected connected EVM address. Supported activity is scanned once per wallet/chain per browser session and can be refreshed manually. The dashboard filters local events to the selected address, shows realized PnL only for matched cost-basis sales, and marks unverified gas fees and incomplete coverage. It does not combine unrelated wallets, execute trades or persist an authenticated server account.
+
+The advanced manual/CSV workspace is still available at `/dashboard`; it is no longer the homepage header CTA. This preserves existing exports and import functionality.
+
+**Configure Privy:** set `NEXT_PUBLIC_PRIVY_APP_ID` in Vercel Production environment, allow the production origin and localhost in the Privy console, then redeploy (the `NEXT_PUBLIC_` variable is bundled at build time). **Never** add Privy app secrets to public variables or GitHub. An NFT activity provider is still required separately for a real scan; logging in via Privy alone does not provide NFT price history.
