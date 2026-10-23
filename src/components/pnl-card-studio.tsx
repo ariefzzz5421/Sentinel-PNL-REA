@@ -109,7 +109,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const aliasText = alias.trim().slice(0, 32);
   const walletLabel = wallet && wallet.length > 15 ? wallet.slice(0, 7) + "…" + wallet.slice(-5) : "Public wallet";
   const imageSize = cardSize === "image" && background ? Math.min(1.85, Math.max(0.85, backgroundRatio)) : 1200 / 700;
-  const minimumHeight = mode === "complete" ? 1080 : 650;
+  const minimumHeight = mode === "complete" ? 1080 : alias.trim() ? 750 : 690;
   const canvasHeight = cardSize === "image" && background ? Math.max(minimumHeight, Math.round(1200 / imageSize)) : minimumHeight;
 
   async function render(target: HTMLCanvasElement) {
@@ -135,7 +135,16 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     c.fillStyle = "#67d3ff"; c.font = "bold 24px Arial"; c.textAlign = "right";
     c.fillText(row.chain.toUpperCase(), w - 84, 102); c.textAlign = "left";
     c.fillStyle = "#faf8ff"; c.font = "bold 50px " + fontFamily;
-    c.fillText(shortName(row.name, 28), 85, 190);
+    c.fillText(shortName(row.name, 28), 85, 190, row.image ? 800 : w - 170);
+    if (row.image) {
+      try {
+        const artwork = await loadCanvasImage(row.image);
+        const side = 112, x = w - 205, y = 139;
+        c.save(); c.beginPath(); c.roundRect(x, y, side, side, 13); c.clip();
+        c.translate(x, y); cover(c, artwork, side, side);
+        c.restore();
+      } catch { /* External artwork may block CORS; never prevent image export. */ }
+    }
     if (aliasText) {
       c.font = aliasSize + "px " + fontFamily; c.fillStyle = "#c8bbdc";
       c.fillText("@" + aliasText.replace(/^@/, ""), 86, 237);
