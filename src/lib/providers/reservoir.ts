@@ -7,6 +7,7 @@ const hosts: Record<Chain, string> = {
   ethereum: "https://api.reservoir.tools",
   base: "https://api-base.reservoir.tools",
   arbitrum: "https://api-arbitrum.reservoir.tools",
+  robinhood: "https://api.reservoir.tools",
 };
 const nativeCurrencies = new Set([
   "0x0000000000000000000000000000000000000000",
@@ -16,6 +17,7 @@ const wrappedEth: Record<Chain, string> = {
   ethereum: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
   base: "0x4200000000000000000000000000000000000006",
   arbitrum: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  robinhood: "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
 };
 const pageSchema = z.object({
   activities: z.array(z.unknown()).max(20),
