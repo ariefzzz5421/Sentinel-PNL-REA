@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const input = parseScanRequest(body);
     const peer =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-    const key = `${peer}:${input.address.toLowerCase()}`;
+    const key = `${peer}:${input.chain}:${input.address.toLowerCase()}`;
     const now = Date.now();
     if (recent.size > 1000)
       for (const [entry, time] of recent)
