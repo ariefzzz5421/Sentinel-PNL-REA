@@ -21,6 +21,7 @@ const chainExplorer: Record<Chain, string> = {
   ethereum: "https://etherscan.io/tx/",
   base: "https://basescan.org/tx/",
   arbitrum: "https://arbiscan.io/tx/",
+  robinhood: "https://robinhoodchain.blockscout.com/tx/",
 };
 
 function safeImage(value: string | null | undefined): string | null {
