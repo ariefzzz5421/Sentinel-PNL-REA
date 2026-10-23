@@ -1,10 +1,10 @@
 /** Scan availability is separate from wallet network availability and accounting units. */
 export const scanChains = [
-  { id: "ethereum", label: "Ethereum", chainId: 1, currency: "ETH", scanReady: true, icon: "/chains/ethereum.svg" },
+  { id: "ethereum", label: "ETH", chainId: 1, currency: "ETH", scanReady: true, icon: "/chains/ethereum.svg" },
   { id: "base", label: "Base", chainId: 8453, currency: "ETH", scanReady: true, icon: "/chains/base.svg" },
-  { id: "arbitrum", label: "Arbitrum", chainId: 42161, currency: "ETH", scanReady: true, icon: "/chains/arbitrum.svg" },
-  { id: "robinhood", label: "Robinhood Chain", chainId: 4663, currency: "ETH", scanReady: false, icon: "/chains/robinhood.png" },
-  { id: "arc", label: "Arc", chainId: 5042, currency: "USDC", scanReady: false, icon: "/chains/arc.png" },
+  { id: "arbitrum", label: "ARB", chainId: 42161, currency: "ETH", scanReady: true, icon: "/chains/arbitrum.svg" },
+  { id: "robinhood", label: "RH", chainId: 4663, currency: "ETH", scanReady: true, icon: "/chains/robinhood.png" },
+  { id: "arc", label: "ARC", chainId: 5042, currency: "USDC", scanReady: false, icon: "/chains/arc.png" },
 ] as const;
 
 export type ScanChain = (typeof scanChains)[number]["id"];
