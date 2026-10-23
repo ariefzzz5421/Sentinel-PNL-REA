@@ -113,8 +113,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const canvasHeight = cardSize === "image" && background ? Math.max(minimumHeight, Math.round(1200 / imageSize)) : minimumHeight;
 
   async function render(target: HTMLCanvasElement) {
-    const c = target.getContext("2d");
-    if (!c) throw new Error("Canvas unavailable.");
+    const context = target.getContext("2d");
+    if (!context) throw new Error("Canvas unavailable.");
+    const c: CanvasRenderingContext2D = context;
     target.width = 1200; target.height = canvasHeight;
     const w = target.width, h = target.height;
     const gradient = c.createLinearGradient(0, 0, w, h);
