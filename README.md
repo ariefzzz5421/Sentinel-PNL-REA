@@ -87,3 +87,14 @@ The public scan page shows compact per-collection cards. Tap any collection to v
 NFT scans now request up to 6 cursor pages of 200 sale events per chain. This increases coverage but does **not** recover unknown mints, gas, unsupported ERC-20 payments, or events beyond the limit. Buying 15 vs 16 NFTs at a reference site can reflect different event coverage, not just a frontend issue. Holdings with uncertain counts stay unverified, not hardcoded as zero. Chain icons are small self-contained vector symbols based on public network branding; logos do not imply affiliation.
 
 Mobile changes: compact wallet / ENS placeholder, smaller contract actions, scrollable chain selector, simplified scan status, and collection results immediately below the form (no intervening workspace card).
+
+
+## PnL Card Studio (October 2026)
+
+Tap any NFT collection and choose `Complete` or `Simple`. The preview and downloaded PNG are rendered from the exact same Canvas; customize alias, image background (local PNG/JPG/WebP up to 5MB), crop size (Fixed/Fit image), font family, and alias font size. `Share image` uses the system share sheet when supported, otherwise downloads the PNG. `Share on X` opens an X post composer containing text but **cannot attach an image automatically**; download and attach manually. No wallet signing is required.
+
+`ETH ↔ USD` uses a current CoinGecko display quote fetched server-side from `/api/market/eth-usd` and does **not** imply historical execution-rate conversion. If pricing is unavailable, USD is disabled. Gas cannot be toggled when provider receipt costs are unknown; the UI explains this rather than fabricating zero fees. ROI is computed only over buys matched to sales; mint/transfer counts remain unknown until actual history is indexed. Both preview and exported image label estimated / partial data.
+
+Network selector uses compact `ETH, Base, ARB, RH, ARC` labels. RH allows ETH-based OpenSea sales with the official wrapped ETH contract; ARC is selectable but the existing ETH-ledger is **not** used for Arc's USDC-native PnL, which would otherwise produce incorrect ETH metrics. An Arc scan returns an informative unsupported-calculation message until a USDC-native accounting engine is implemented.
+
+Supporting evidence: https://docs.opensea.io/reference/get_chains, https://docs.opensea.io/reference/list_events_by_account, https://opensea.io/blog/articles/robinhood-chain-is-live-on-opensea, https://opensea.io/blog/articles/arc-is-live-on-opensea.
