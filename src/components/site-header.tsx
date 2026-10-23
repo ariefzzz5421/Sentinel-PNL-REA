@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight } from "lucide-react";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
 
 export function SiteHeader({ active = "" }: { active?: string }) {
@@ -8,7 +7,7 @@ export function SiteHeader({ active = "" }: { active?: string }) {
     <header className="site-header">
       <div className="header-inner">
         <Link href="/" className="brand" aria-label="Sentinel PNL home">
-          <Image src="/icon.svg" className="brand-logo" width={29} height={29} alt=""/>
+          <Image src="/sentinel-logo.svg" className="brand-logo" width={36} height={38} alt="Sentinel logo"/>
           <span>
             SENTINEL<span className="brand-light">PNL</span>
           </span>
@@ -16,9 +15,9 @@ export function SiteHeader({ active = "" }: { active?: string }) {
         <nav className="top-nav" aria-label="Main navigation">
           <Link
             className={active === "dashboard" ? "active" : ""}
-            href="/dashboard"
+            href="/profile"
           >
-            Workspace
+            My PnL
           </Link>
           <Link
             className={active === "method" ? "active" : ""}
@@ -27,7 +26,7 @@ export function SiteHeader({ active = "" }: { active?: string }) {
             Methodology
           </Link>
         </nav>
-        <div className="header-actions"><WalletConnectControl/><Link href="/dashboard" className="header-cta">Open workspace <ArrowUpRight size={16} /></Link></div>
+        <div className="header-actions"><WalletConnectControl/></div>
       </div>
     </header>
   );

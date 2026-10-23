@@ -1694,3 +1694,84 @@ td small {
     align-self: flex-start;
   }
 }
+
+
+/* Sentinel wallet-first shell and personal NFT PnL dashboard */
+.scanner-brand img,.brand-logo{object-fit:contain;filter:drop-shadow(0 0 8px rgba(156,107,252,.35))}
+.scanner-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0}
+.wallet-connect-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.personal-dashboard{width:min(calc(100% - 36px),1170px);margin:30px auto 96px}
+.personal-profile-hero{background:radial-gradient(circle at 88% 5%,rgba(99,59,163,.38),transparent 46%),#141222;border:1px solid #40325f;box-shadow:0 20px 80px rgba(0,0,0,.16)}
+.personal-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.personal-profile-hero .profile-eyebrow{display:flex;align-items:center;gap:9px;color:#c09eff}
+.personal-profile-hero h1{font-size:clamp(30px,4vw,50px);letter-spacing:-.045em;margin:12px 0}
+.personal-explorer{display:inline-flex;align-items:center;gap:5px;color:#a7d8ff;border:1px solid #54446e;padding:10px 13px;border-radius:10px;white-space:nowrap;font-size:12px}
+.personal-explorer:hover{border-color:#a987f5}
+.personal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:21px 0 15px}
+.personal-toolbar-label{color:#aca4c5;font-size:13px;display:flex;gap:9px;align-items:center}
+.personal-dot{display:inline-block;width:8px;height:8px;background:#ac89e5;border-radius:50%;box-shadow:0 0 0 4px #9168d525}
+.personal-dashboard .profile-scan-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.personal-dashboard .profile-scan-actions select,.personal-dashboard .profile-scan-actions button{min-height:42px;border-radius:10px}
+.personal-dashboard .profile-scan-actions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#4ec4f0;color:#09111e}
+.personal-dashboard .profile-notice{margin:0 0 14px;border-radius:12px;line-height:1.55;font-size:13px}
+.personal-dashboard .profile-notice.personal-error{border-color:#bd6273;color:#ffc5d0;background:#3a1f323d}
+.personal-dashboard .profile-notice.personal-info{border-color:#554477;color:#d7caf4;background:#20183280}
+.personal-disclaimer{font-size:12px;color:#ffc29a;margin:10px 0}
+.personal-overview{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.personal-pnl-hero{border:1px solid #4f3b72;background:radial-gradient(circle at 100% 0%,#3a2157,transparent 50%),linear-gradient(140deg,#211831,#131424);border-radius:22px;padding:32px;min-width:0}
+.personal-pnl-hero .personal-stat-label{display:block;font-size:11px;letter-spacing:.15em;color:#bf9dff;font-weight:750}
+.personal-pnl-hero>strong{display:block;font-size:clamp(34px,4.5vw,62px);letter-spacing:-.06em;line-height:1.13;margin:24px 0 14px;overflow-wrap:anywhere;color:#f7f4ff}
+.personal-profit{color:#54dfb4!important}
+.personal-loss{color:#ff889b!important}
+.personal-pnl-hero p{font-size:13px;color:#d4c7e8;line-height:1.5}
+.personal-pnl-meta{display:block;border-top:1px solid #51406980;padding-top:18px;margin-top:23px;font-size:12px;color:#a69bb8;line-height:1.5}
+.personal-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.personal-stat-grid>section{border:1px solid #37314b;background:#171523;border-radius:16px;padding:20px;display:flex;flex-direction:column;min-width:0}
+.personal-stat-grid>section span{font-size:12px;color:#ae9cce}
+.personal-stat-grid>section strong{font-size:clamp(25px,2.7vw,36px);letter-spacing:-.04em;margin:auto 0;padding:8px 0;color:#f9f6ff}
+.personal-stat-grid>section small{font-size:11px;color:#817891;line-height:1.4}
+.personal-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.personal-dashboard .personal-section{display:block;margin:0;border:1px solid #343047;border-radius:18px;background:#151420;padding:24px;min-width:0}
+.personal-section-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #39324d;padding-bottom:17px;margin-bottom:6px}
+.personal-kicker{font-size:10px;font-weight:800;letter-spacing:.16em;color:#ae8de4}
+.personal-section-head h2{margin:8px 0 0;font-size:21px}
+.personal-collection-list,.personal-trade-list{display:flex;flex-direction:column}
+.personal-collection-row,.personal-trade-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 0;border-bottom:1px solid #2e293e;min-width:0}
+.personal-collection-row:last-child,.personal-trade-row:last-child{border-bottom:0}
+.personal-collection-row>div:first-child,.personal-trade-row>div{min-width:0;flex:1}
+.personal-collection-row strong,.personal-trade-row strong{display:block;color:#f1edfa;font-size:13px;overflow-wrap:anywhere}
+.personal-collection-row small,.personal-trade-row small{display:block;margin-top:5px;color:#9d92b0;font-size:11px}
+.personal-collection-result{text-align:right;max-width:50%}
+.personal-collection-result strong{white-space:nowrap}
+.personal-trade-badge{font-size:10px;padding:7px 9px;border-radius:7px;color:#bfeefb;background:#183a4a;border:1px solid #2d5364}
+.personal-trade-badge.sell{color:#ccffdd;background:#153928;border-color:#255943}
+.personal-trade-badge.mint{color:#e1c9ff;background:#322147;border-color:#593977}
+.personal-trade-row>strong:last-child{white-space:nowrap;font-size:12px;color:#e1d3fc}
+.personal-empty{padding:26px 0;color:#aa9eba!important;font-size:13px;line-height:1.65}
+.personal-footer{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;font-size:12px;color:#8c809e;margin-top:22px;line-height:1.7}
+.personal-footer span{max-width:700px}
+.personal-footer a{display:inline-flex;align-items:center;gap:6px;color:#acdbff;white-space:nowrap}
+.profile-status{color:#bfaee8}
+@keyframes sentinelSpin{to{transform:rotate(360deg)}}
+.personal-spin{animation:sentinelSpin 1s linear infinite}
+@media(max-width:850px){
+  .personal-overview,.personal-panels{grid-template-columns:1fr}
+  .personal-pnl-hero{padding:26px}
+}
+@media(max-width:600px){
+  .personal-dashboard{width:min(calc(100% - 24px),1170px);margin:18px auto 70px}
+  .personal-hero-top{display:block}
+  .personal-explorer{margin-top:17px}
+  .personal-toolbar{flex-direction:column;align-items:stretch}
+  .personal-dashboard .profile-scan-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+  .personal-dashboard .profile-scan-actions>*{width:100%;min-width:0}
+  .personal-pnl-hero{padding:21px}
+  .personal-pnl-hero>strong{font-size:35px}
+  .personal-stat-grid{gap:8px}
+  .personal-stat-grid>section{padding:15px;min-height:125px}
+  .personal-dashboard .personal-section{padding:19px 16px}
+  .personal-trade-row{gap:7px}
+  .personal-trade-badge{padding:5px 6px;font-size:9px}
+  .personal-footer{flex-direction:column;gap:8px}
+  .personal-collection-row strong,.personal-trade-row strong{font-size:12px}
+}
