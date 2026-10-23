@@ -2,16 +2,15 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { ArrowRight, CircleHelp, FileInput, ScanSearch } from "lucide-react";
 import { addressSchema, eventsSchema, type Chain, type TradeEvent } from "@/lib/schema";
 import { scanChains, scanChainById, type ScanChain } from "@/lib/scan-chains";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
+import { ScanResults, type PublicHolding } from "@/components/scan-results";
 
 const STORE = "sentinel-pnl-events-v1";
 export function ScannerHome() {
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [chain, setChain] = useState<ScanChain>("ethereum");
   const [wallets, setWallets] = useState("");
@@ -19,6 +18,11 @@ export function ScannerHome() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
+  const [resultEvents, setResultEvents] = useState<TradeEvent[] | null>(null);
+  const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
+  const [resultAddress, setResultAddress] = useState<string | null>(null);
+  const [resultPartial, setResultPartial] = useState(false);
+  const [resultWarning, setResultWarning] = useState("");
   async function loadWallets(file?: File) {
     if (!file) return;
     try {
@@ -35,6 +39,10 @@ export function ScannerHome() {
   async function scan(mode: "wallet" | "contract" | "bot") {
     let addresses: string[];
     let resolutionNote = "";
+    setResultEvents(null);
+    setResultHoldings([]);
+    setResultAddress(null);
+    setResultWarning("");
     const selected = scanChainById(chain);
     if (!selected.scanReady) {
       setMessage(`${selected.label} network is configured (chain ${selected.chainId}), but NFT scan data is not connected yet. Add a compatible activity provider before scanning; RPC alone cannot calculate PnL.`);
@@ -78,8 +86,25 @@ export function ScannerHome() {
       if (merged.size > 10_000) throw new Error("Ledger exceeds 10,000 events. Export a CSV from the dashboard first.");
       localStorage.setItem(STORE, JSON.stringify([...merged.values()]));
       sessionStorage.setItem("sentinel-pnl-scan-status-v1", JSON.stringify({ partial: partial || failures.length > 0, warning: [resolutionNote, ...warnings, ...failures].join(" ") }));
-      if (gathered.length) router.push("/dashboard");
-      else setMessage(`${resolutionNote} No supported priced NFT trades found.${partial || failures.length ? " Coverage is partial." : ""} ${[...warnings, ...failures].join(" ")}`.trim());
+      let holdings: PublicHolding[] = [];
+      let holdingWarning = "";
+      if (mode === "wallet" && addresses.length === 1) {
+        try {
+          const response = await fetch("/api/opensea/holdings?address=" + encodeURIComponent(addresses[0]));
+          const payload: unknown = await response.json();
+          if (!response.ok) holdingWarning = "Holding data unavailable from OpenSea.";
+          else if (payload && typeof payload === "object" && "holdings" in payload && Array.isArray(payload.holdings)) {
+            holdings = payload.holdings as PublicHolding[];
+            if ("partial" in payload && payload.partial) holdingWarning = "Holding history may be incomplete.";
+          }
+        } catch { holdingWarning = "Holding data unavailable from OpenSea."; }
+      }
+      setResultEvents(gathered);
+      setResultHoldings(holdings);
+      setResultAddress(addresses.length === 1 ? addresses[0] : null);
+      setResultPartial(Boolean(partial || failures.length || holdingWarning));
+      setResultWarning([resolutionNote, ...warnings, ...failures, holdingWarning].filter(Boolean).join(" "));
+      setMessage([resolutionNote, "Scan finished:", gathered.length + "priced events,", holdings.length + "owned collection records.", !gathered.length ? "No supported priced trades in the available history." : ""].filter(Boolean).join(" "));
     } catch (cause) { const detail = cause instanceof Error ? cause.message : "Scan failed."; setMessage([resolutionNote, detail].filter(Boolean).join(" ")); setError(true); }
     finally { setBusy(false); }
   }
@@ -124,8 +149,10 @@ export function ScannerHome() {
           <Link href="/dashboard">Open ledger <ArrowRight size={15}/></Link>
           <Link href="/methodology">PnL methodology <CircleHelp size={15}/></Link>
         </div>
-        {message ? <div className={`scanner-message ${error ? "error" : ""}`} role={error ? "alert" : "status"}>{message}</div>
-          : <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
+        {message && <div className={`scanner-message ${error ? "error" : ""}`} role={error ? "alert" : "status"}>{message}</div>}
+        {resultEvents !== null
+          ? <ScanResults events={resultEvents} holdings={resultHoldings} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
+          : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
       <aside className="scanner-side scanner-side-right" aria-label="How to use">
         <h2>How to use</h2>
