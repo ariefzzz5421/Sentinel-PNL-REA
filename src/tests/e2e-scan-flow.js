@@ -28,7 +28,10 @@ async (page) => {
   await page.getByRole("button", { name: "Open Orbit PnL details and sharing" }).click();
   await page.getByRole("dialog", { name: "Orbit NFT PnL" }).waitFor();
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download", exact: true }).click();
+  await page.getByRole("button", { name: "Simple", exact: true }).click();
+  await page.getByRole("button", { name: "Complete", exact: true }).click();
+  await page.getByPlaceholder("@alias").fill("myNFT");
+  await page.getByRole("button", { name: "Download PNG" }).click();
   const file = await download;
   if (!file.suggestedFilename().endsWith(".png")) throw new Error("Share card did not export PNG.");
   await page.getByRole("button", { name: "Close details" }).click();
