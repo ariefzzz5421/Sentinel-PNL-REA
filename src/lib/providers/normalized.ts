@@ -6,6 +6,7 @@ import {
   type TradeEvent,
 } from "@/lib/schema";
 import { getReservoirEvents } from "./reservoir";
+import { getOpenSeaEvents } from "./opensea";
 
 const requestSchema = z.object({
   address: addressSchema,
@@ -43,11 +44,13 @@ export async function getProviderEvents(
 ): Promise<{ events: TradeEvent[]; partial: boolean; warning?: string }> {
   const endpoint = process.env.SENTINEL_PROVIDER_URL;
   const apiKey = process.env.SENTINEL_PROVIDER_API_KEY;
+  const openSeaKey = process.env.OPENSEA_API_KEY;
+  if (openSeaKey) return getOpenSeaEvents(input, openSeaKey);
   const reservoirKey = process.env.RESERVOIR_API_KEY;
   if (reservoirKey) return getReservoirEvents(input, reservoirKey);
   if (!endpoint || !apiKey)
     throw new ProviderError(
-      "Live scanning is not configured. Import a trade CSV or add trades manually.",
+      "NFT scanning is not configured. Add OPENSEA_API_KEY to the Vercel Production environment and redeploy.",
       503,
     );
   let url: URL;
