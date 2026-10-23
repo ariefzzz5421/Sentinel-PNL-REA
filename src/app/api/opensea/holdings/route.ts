@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const apiKey = process.env.OPENSEA_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "OPENSEA_API_KEY is not configured." }, { status: 503 });
 
-  const entries: Array<{ name: string; slug: string; imageUrl: string | null; held: number; chain: string; contract: string }> = [];
+  const entries: Array<{ name: string; slug: string; imageUrl: string | null; held: number | null; chain: string; contract: string }> = [];
   const seen = new Set<string>();
   let cursor: string | undefined;
   let partial = false;
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         seen.add(key);
         entries.push({
           slug: collection.collection, name: collection.name, imageUrl: imageUrl(collection.image_url),
-          held: collection.contracts.length === 1 ? collection.total_quantity : 0,
+          held: collection.contracts.length === 1 ? collection.total_quantity : null,
           chain: contract.chain, contract: contract.address.toLowerCase(),
         });
       }
