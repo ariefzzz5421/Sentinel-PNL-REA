@@ -125,3 +125,14 @@ Performance improvements include: memoized image decoding (with bounded size), 7
 Share-card preview and downloaded PNG use a single tabular-monospace PnL baseline with ETH followed by a spot USD annotation separated by one space; all quoted dollar values in the table are compact, right-aligned beside the corresponding ETH metric. The divider has more room before the metric rows. A small per-chain logo is placed next to the top-right chain label. The ETH/USD display toggle and the disabled gas toggle were removed because their presence implied unsupported accounting controls. ETH is always the native accounting unit; USD is a display-only current-rate equivalent. Fees remain omitted when unknown.
 
 The top market tape no longer renders the visible CoinGecko/time pill; provider attribution and timestamps remain internal to the market-data response. The Base tab uses the user-provided blue square reference (recreated as a tiny SVG and normalized to the other chain logos). All existing chain availability / scan logic remains unchanged.
+
+
+## Mobile compact design (Oct 2026)
+
+The public NFT scanner now uses a slim mobile-first layout for approximately 320–430 px screens: 56px header, 38px chain chips, 35px market tape, tighter hero copy, 48px primary Scan button, compact collection result cards, and trimmed studio controls. No wallet scanning, provider, or PnL accounting routes were changed.
+
+The animated ticker deliberately has **no visible "MARKET" label** and uses the entire horizontal bar for BTC/ETH/BNB/HYPE assets. The feed's accessible loading/error status remains available. Reduced-motion users can horizontally scroll the stopped ticker.
+
+The PnL share card defaults to a **portrait composition** better suited to phone viewing, while preserving Complete/Simple modes and working Canvas-based custom alias, font, background, Fit image, PNG export and native share. The layout follows a compact NFT avatar + title + chain heading, grouped minted/bought/sold/hold/transfer, trading values, realized profit, and wallet footer. ETH spot-USD figures remain approximate, not historical execution prices, and unknown mint basis remains unknown.
+
+Validate at 320, 375, 390, 430, 768, 1024 and 1440px. Mobile browser visual test and real native share sheet on iOS should be checked after deployment; CI unit tests alone do not prove device rendering.
