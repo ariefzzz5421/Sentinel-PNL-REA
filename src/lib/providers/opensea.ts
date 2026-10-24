@@ -201,7 +201,7 @@ export async function getOpenSeaEvents(
       if (!parsed.success) throw new ProviderError("OpenSea activity schema did not match the official format.", 502);
       for (const raw of parsed.data.asset_events) {
         const mapped = kind === "sale" ? fromSale(raw, request) : fromAcquisition(raw, request);
-        if (mapped && (kind === "sale" || (kind === "mint" ? mapped.type === "mint" : mapped.type === "transfer_in")))
+        if (mapped && (kind === "sale" || (kind === "mint" ? mapped.type === "mint" : true)))
           found.push(mapped);
         else if (kind === "sale") skippedHere++;
       }
@@ -240,7 +240,7 @@ export async function getOpenSeaEvents(
     for (const event of result.value.found) {
       // Transfer logs and mint logs can both describe the same acquisition.
       // Prefer explicit mint evidence. Do not double count one tx/token pair.
-      if (event.type === "transfer_in" && [...events.values()].some((stored) =>
+      if ((event.type === "transfer_in" || event.type === "mint") && [...events.values()].some((stored) =>
         (stored.type === "mint" || stored.type === "buy") && stored.txHash && stored.txHash === event.txHash &&
         stored.chain === event.chain && stored.contract === event.contract &&
         stored.tokenId === event.tokenId)) continue;
