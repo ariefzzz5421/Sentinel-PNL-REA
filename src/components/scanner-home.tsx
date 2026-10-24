@@ -110,7 +110,7 @@ export function ScannerHome() {
       setResultAddress(addresses.length === 1 ? addresses[0] : null);
       setResultPartial(Boolean(partial || failures.length || holdingWarning));
       setResultWarning([resolutionNote, ...warnings, ...failures, holdingWarning].filter(Boolean).join(" "));
-      setMessage([resolutionNote, "Scan finished:", gathered.length + "priced events,", holdings.length + "owned collection records.", !gathered.length ? "No supported priced trades in the available history." : ""].filter(Boolean).join(" "));
+      setMessage([resolutionNote, "Scan finished:", gathered.length + "NFT events,", holdings.length + "owned collection records.", !gathered.length ? "No supported priced trades in the available history." : ""].filter(Boolean).join(" "));
     } catch (cause) { const detail = cause instanceof Error ? cause.message : "Scan failed."; setMessage([resolutionNote, detail].filter(Boolean).join(" ")); setError(true); }
     finally { setBusy(false); }
   }
@@ -151,7 +151,7 @@ export function ScannerHome() {
           </div>
         </section>
         {message && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
-          {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " priced events. Tap any collection to view or share its PnL."}
+          {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " NFT activity events. Tap any collection to view or share its PnL."}
         </p>}
         {resultEvents !== null
           ? <ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
