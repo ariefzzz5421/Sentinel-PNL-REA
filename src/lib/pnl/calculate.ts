@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import type { TradeEvent } from "@/lib/schema";
+import type { Chain, TradeEvent } from "@/lib/schema";
 
 export type CalculatedTrade = TradeEvent & {
   costEth: string | null;
@@ -8,6 +8,9 @@ export type CalculatedTrade = TradeEvent & {
 };
 export type CollectionSummary = {
   name: string;
+  /** Stable collection identity for chain-accurate artwork and navigation. */
+  chain: Chain;
+  contract: string | null;
   buys: number;
   sells: number;
   mints: number;
@@ -48,6 +51,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     string,
     {
       name: string;
+      chain: Chain;
+      contract: string | null;
       buys: number;
       sells: number;
       mints: number;
@@ -81,6 +86,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     const collectionKey = `${event.chain}:${(event.contract || event.collection).toLowerCase()}`;
     const col = collectionMap.get(collectionKey) || {
       name: event.collection,
+      chain: event.chain,
+      contract: event.contract || null,
       buys: 0,
       sells: 0,
       mints: 0,
@@ -180,6 +187,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     collections: [...collectionMap.entries()]
       .map(([key, c]) => ({
         name: c.name,
+        chain: c.chain,
+        contract: c.contract,
         buys: c.buys,
         sells: c.sells,
         mints: c.mints,

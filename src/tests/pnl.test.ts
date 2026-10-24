@@ -55,6 +55,17 @@ describe("NFT PnL accounting", () => {
     expect(result.realizedEth).toBe("0");
     expect(result.trades.find((t) => t.type === "sell")?.realizedEth).toBeNull();
   });
+  it("includes chain and contract identity on collection summaries for exact artwork matching", () => {
+    const result = calculatePnl([
+      trade("buy", "2026-01-01T00:00:00Z", "buy", "0.1"),
+      trade("sell", "2026-02-01T00:00:00Z", "sell", "0.2"),
+    ]);
+    expect(result.collections[0]).toMatchObject({
+      chain: "ethereum",
+      contract: "0x0000000000000000000000000000000000000001",
+      name: "Orbit",
+    });
+  });
   it("does not match a sale in a different wallet", () => {
     const otherWallet = "0x0000000000000000000000000000000000000002";
     const result = calculatePnl([

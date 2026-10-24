@@ -2108,3 +2108,68 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .scanner-intro h1 { font-size:27px; }
   .scan-collection-title strong { font-size:13px; }
 }
+
+
+/* Connected-wallet profile: single-column analytical feed with real NFT thumbnails. */
+.personal-dashboard .personal-market-tape { margin:12px 0 0; width:100%; min-width:0; }
+.personal-dashboard .personal-market-tape .market-tape { margin:0; min-height:40px; }
+.personal-dashboard .personal-panels { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; margin-top:16px; }
+.personal-dashboard .personal-panels > .personal-section { grid-column:1/-1; width:100%; padding:20px 23px; }
+.personal-dashboard .personal-toolbar { margin:14px 0 12px; justify-content:flex-end; }
+.personal-dashboard .personal-coverage-details { margin:0 0 14px; padding:10px 13px; border:1px solid #473856; background:#181525; border-radius:11px; font-size:12px; color:#aa9bbf; line-height:1.55; }
+.personal-coverage-details summary { cursor:pointer; color:#ddb98f; font-size:12px; font-weight:600; }
+.personal-coverage-details p { margin:9px 0; }
+.personal-coverage-details ul { margin:7px 0 0; padding-left:20px; max-height:125px; overflow-y:auto; overflow-wrap:anywhere; }
+.personal-overview-usd { display:inline-block; margin-left:12px; font-size:clamp(15px,2vw,23px); font-family:var(--sentinel-data); color:inherit; vertical-align:baseline; letter-spacing:-.03em; white-space:nowrap; }
+.personal-dashboard .personal-pnl-hero>strong { overflow-wrap:normal; word-break:normal; }
+.personal-dashboard .personal-pnl-meta { display:none; }
+.personal-dashboard .personal-collection-row,
+.personal-dashboard .personal-trade-row { display:flex; align-items:center; gap:14px; min-width:0; padding:12px 0; }
+.personal-dashboard .personal-row-main { display:flex; align-items:center; min-width:0; flex:1 1 0; gap:13px; }
+.personal-dashboard .personal-row-copy { min-width:0; flex:1 1 auto; }
+.personal-dashboard .personal-row-copy strong { display:block; font-size:14px; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.personal-dashboard .personal-row-copy small { display:block; font-size:11px; color:#a397bb; margin-top:5px; }
+.personal-dashboard .personal-nft-thumb { flex:0 0 52px; width:52px; height:52px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:11px; background:#242037; color:#8477a0; border:1px solid #3d3450; }
+.personal-dashboard .personal-nft-thumb img { display:block; width:100%; height:100%; object-fit:cover; }
+.personal-dashboard .personal-collection-result { flex:0 0 auto; max-width:48%; text-align:right; min-width:0; }
+.personal-dashboard .personal-collection-result strong { font-family:var(--sentinel-data); display:block; white-space:normal; line-height:1.4; font-size:13px; overflow-wrap:anywhere; }
+.personal-dashboard .personal-collection-result small { color:#988cae; font-size:10px; margin-top:2px; }
+.personal-dashboard .personal-usd-inline { font-size:.88em; font-weight:600; opacity:.87; margin-left:.3em; white-space:nowrap; }
+.personal-dashboard .personal-trade-title { display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0; }
+.personal-dashboard .personal-trade-title strong { display:inline; min-width:0; max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.personal-dashboard .personal-trade-badge { display:inline-flex; flex:0 0 auto; align-items:center; padding:3px 7px; font-size:9px; border-radius:6px; line-height:1.3; letter-spacing:.03em; font-weight:750; }
+.personal-dashboard .personal-trade-badge.transfer_in { background:#28203a; color:#d1b8f2; border-color:#60447f; }
+.personal-dashboard .personal-trade-value { flex:0 0 auto; max-width:40%; text-align:right; min-width:0; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.personal-dashboard .personal-trade-value strong { display:block; font-family:var(--sentinel-data); font-size:12px; line-height:1.4; color:#e7dcff; white-space:nowrap; }
+.personal-dashboard .personal-trade-value .personal-usd-inline { display:block; color:#afa3c1; font-family:var(--sentinel-data); font-size:11px; margin:0; }
+@media(max-width:720px){
+  .personal-dashboard .personal-panels { grid-template-columns:minmax(0,1fr); }
+  .personal-dashboard .personal-panels > .personal-section { padding:15px 13px; border-radius:14px; }
+  .personal-dashboard .personal-collection-row,.personal-dashboard .personal-trade-row { gap:9px; padding:11px 0; }
+  .personal-dashboard .personal-row-main { gap:9px; }
+  .personal-dashboard .personal-nft-thumb { flex-basis:42px; width:42px; height:42px; border-radius:9px; }
+  .personal-dashboard .personal-row-copy strong { font-size:12px; }
+  .personal-dashboard .personal-row-copy small { font-size:10px; }
+  .personal-dashboard .personal-collection-result { max-width:49%; }
+  .personal-dashboard .personal-collection-result strong { font-size:11px; }
+  .personal-dashboard .personal-trade-value strong { font-size:11px; }
+  .personal-dashboard .personal-trade-value .personal-usd-inline { font-size:10px; }
+  .personal-dashboard .personal-section-head { margin-bottom:3px; padding-bottom:12px; }
+  .personal-dashboard .personal-section-head h2 { font-size:18px; }
+  .personal-overview-usd { margin-left:8px; font-size:15px; }
+  .personal-dashboard .personal-coverage-details { padding:8px 10px; }
+  .personal-dashboard .personal-market-tape .market-tape { min-height:36px; }
+}
+@media(max-width:375px){
+  .personal-dashboard .personal-nft-thumb { width:38px; height:38px; flex-basis:38px; }
+  .personal-dashboard .personal-trade-badge { font-size:8px; padding:3px 5px; }
+  .personal-dashboard .personal-collection-result strong { font-size:10px; }
+}
+
+/* Keep the live ETH amount and converted USD on the same row when space permits. */
+.personal-dashboard .personal-trade-value { max-width:46%; display:block; }
+.personal-dashboard .personal-trade-value strong { display:block; font-size:12px; white-space:normal; text-align:right; overflow-wrap:normal; }
+.personal-dashboard .personal-trade-value .personal-usd-inline { display:inline; margin-left:.35em; font-size:.9em; }
+@media(max-width:600px){
+  .personal-dashboard .personal-trade-value strong { font-size:11px; }
+}
