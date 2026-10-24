@@ -48,9 +48,12 @@ const transferSchema = z.object({
   event_type: z.enum(["mint", "transfer"]),
   event_timestamp: z.number().positive(),
   chain: z.string(),
-  nft: nftSchema,
+  nft: nftSchema.optional(),
+  asset: nftSchema.nullable().optional(),
   from_address: z.string().nullable().optional(),
-  to_address: z.string(),
+  to_address: z.string().optional(),
+  maker: z.string().optional(),
+  taker: z.string().nullable().optional(),
   quantity: z.number().int().positive().optional(),
   transaction: z.string().optional(),
 });
@@ -59,10 +62,11 @@ function fromAcquisition(raw: unknown, request: ScanRequest): TradeEvent | null 
   if (!parsed.success) return null;
   const event = parsed.data;
   const wallet = request.address.toLowerCase();
-  const recipient = event.to_address.toLowerCase();
+  const recipient = (event.to_address || event.taker || (event.event_type === "mint" ? event.maker : "") || "").toLowerCase();
+  const nft = event.nft || event.asset;
   if (event.chain !== request.chain || recipient !== wallet || (event.quantity !== undefined && event.quantity !== 1)) return null;
-  if (event.nft.token_standard?.toLowerCase() === "erc1155") return null;
-  const contract = event.nft.contract.toLowerCase();
+  if (!nft || nft.token_standard?.toLowerCase() === "erc1155") return null;
+  const contract = nft.contract.toLowerCase();
   if (!addressSchema.safeParse(contract).success ||
     (request.contract && request.contract.toLowerCase() !== contract)) return null;
   const isMint = event.event_type === "mint" ||
@@ -74,15 +78,15 @@ function fromAcquisition(raw: unknown, request: ScanRequest): TradeEvent | null 
   if (Number.isNaN(date.getTime())) return null;
   const txHash = event.transaction && TX_HASH.test(event.transaction) ? event.transaction : undefined;
   const digest = createHash("sha256").update([
-    event.transaction || "", event.event_timestamp, contract, event.nft.identifier, wallet,
+    event.transaction || "", event.event_timestamp, contract, nft.identifier, wallet,
     isMint ? "mint" : "transfer_in",
   ].join("|")).digest("hex").slice(0, 40);
   const candidate = eventSchema.safeParse({
     id: `opensea:${request.chain}:${digest}`, date: date.toISOString(),
     chain: request.chain, wallet, contract,
-    tokenId: String(event.nft.identifier),
-    imageUrl: event.nft.image_url?.startsWith("https://") ? event.nft.image_url : undefined,
-    collection: event.nft.collection || event.nft.name || `${contract.slice(0, 10)}…`,
+    tokenId: String(nft.identifier),
+    imageUrl: nft.image_url?.startsWith("https://") ? nft.image_url : undefined,
+    collection: nft.collection || nft.name || `${contract.slice(0, 10)}…`,
     type: isMint ? "mint" : "transfer_in",
     // No evidence for exact mint price from a transfer-shaped event.
     amountEth: "0", feeEth: "0", feeKnown: false, basisKnown: false, txHash,
@@ -237,7 +241,7 @@ export async function getOpenSeaEvents(
       // Transfer logs and mint logs can both describe the same acquisition.
       // Prefer explicit mint evidence. Do not double count one tx/token pair.
       if (event.type === "transfer_in" && [...events.values()].some((stored) =>
-        stored.type === "mint" && stored.txHash && stored.txHash === event.txHash &&
+        (stored.type === "mint" || stored.type === "buy") && stored.txHash && stored.txHash === event.txHash &&
         stored.chain === event.chain && stored.contract === event.contract &&
         stored.tokenId === event.tokenId)) continue;
       events.set(event.id, event);
