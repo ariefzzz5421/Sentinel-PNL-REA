@@ -215,9 +215,10 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     if (mode === "complete") {
       textRow("MINTED", String(row.minted));
       textRow("TRANSFER IN", String(row.transfersIn));
-      const metric = (amount: number | null) => amount === null ? "—" : coin === "ETH" ? amount.toFixed(4) : (quote ? (amount * quote).toFixed(2) : "—");
-      const convertUsd = (amount: number | null) => amount === null || quote === null ? null
-        : coin === "ETH" ? amount * quote : amount;
+      // Detail figures always retain native ETH on the left and live USD on the right,
+      // even when the headline currency toggle switches to USD.
+      const metric = (amount: number | null) => amount === null ? "—" : amount.toFixed(4);
+      const convertUsd = (amount: number | null) => amount === null || quote === null ? null : amount * quote;
       textRow("AVG BUY", metric(metrics.avgBuy), convertUsd(metrics.avgBuy));
       textRow("AVG SALE", metric(metrics.avgSale), convertUsd(metrics.avgSale));
       textRow("TOTAL INVESTED", metric(metrics.invested), convertUsd(metrics.invested));
