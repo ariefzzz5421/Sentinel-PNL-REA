@@ -136,3 +136,14 @@ The animated ticker deliberately has **no visible "MARKET" label** and uses the 
 The PnL share card defaults to a **portrait composition** better suited to phone viewing, while preserving Complete/Simple modes and working Canvas-based custom alias, font, background, Fit image, PNG export and native share. The layout follows a compact NFT avatar + title + chain heading, grouped minted/bought/sold/hold/transfer, trading values, realized profit, and wallet footer. ETH spot-USD figures remain approximate, not historical execution prices, and unknown mint basis remains unknown.
 
 Validate at 320, 375, 390, 430, 768, 1024 and 1440px. Mobile browser visual test and real native share sheet on iOS should be checked after deployment; CI unit tests alone do not prove device rendering.
+
+
+### Wallet dashboard redesign: compact artwork-first activity (October 2026)
+
+- The connected wallet profile at `/profile` keeps OpenSea identity and wallet selection, then renders a full-width, live BTC/ETH/BNB/HYPE market tape above its scan controls.
+- Informational "Latest scan completed" text and repeated full-screen success notices are gone. Refresh/scan errors stay visible, and partial-history limitations remain accessible in a collapsed disclosure. **Do not interpret partial NFT history as audited complete PnL.**
+- The three panels are stacked in reading order at **all** breakpoints: Top Performers, Collection PnL, Latest NFT Trades.
+- Row thumbnails use real `imageUrl` values from indexed NFT events and (where available) OpenSea public collection holdings. Images are mapped by **chain + contract**, lazily loaded, and safely fall back to a neutral icon when the public provider has no image. No artwork is fabricated.
+- The BUY/SELL/MINT/TRANSFER badge is located directly beside the NFT name in the Activity row, never detached at the left edge.
+- ETH amounts throughout the overview, top performers, breakdown, and activity show approximate current USD equivalents from the same validated `/api/market/eth-usd` endpoint as the share card. If the feed is stale or unavailable, the USD amount is omitted rather than invented.
+- Per-trade fee/cost-basis caveats are removed from compact rows; the methodology and expandable coverage notes remain available. The PnL engine and financial calculations are unchanged.
