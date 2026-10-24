@@ -147,3 +147,12 @@ Validate at 320, 375, 390, 430, 768, 1024 and 1440px. Mobile browser visual test
 - The BUY/SELL/MINT/TRANSFER badge is located directly beside the NFT name in the Activity row, never detached at the left edge.
 - ETH amounts throughout the overview, top performers, breakdown, and activity show approximate current USD equivalents from the same validated `/api/market/eth-usd` endpoint as the share card. If the feed is stale or unavailable, the USD amount is omitted rather than invented.
 - Per-trade fee/cost-basis caveats are removed from compact rows; the methodology and expandable coverage notes remain available. The PnL engine and financial calculations are unchanged.
+
+
+### Solana / Ink network selectors and SOL market ticker
+
+The chain selector displays `ETH · Base · ARB · RH · ARC · SOL · INK`. Official Solana Foundation logomark and Ink chain mark SVGs are checked in at `public/chains/solana.svg` and `public/chains/ink.svg`, respectively, preserving the upstream artwork (see [Solana branding](https://solana.com/branding) and [Ink brand kit](https://docs.inkonchain.com/work-with-ink/brand-kit)).
+
+**Network UI does not imply scan coverage.** Solana uses a non-EVM address model and is not supported by the current EVM NFT scanner. Ink is an EVM L2 (mainnet chain ID 57073, gas ETH) but has no verified indexed NFT sale/mint adapter in this app. SOL and INK tabs provide accurate explanatory status upon selection/scan; neither fabricates PnL or submits malformed data to the existing EVM API. Arc remains visible with its existing USDC accounting limitation.
+
+The market tape now includes SOL alongside BTC, ETH, BNB, and HYPE from one CoinGecko `/coins/markets` query. It shows real provider USD spot quotes and 24h changes, cached server-side for 90 seconds. The SOL ticker uses the official local Solana Foundation logo. When a quote is absent, the UI displays a dash—not a made-up price. All existing assets continue to use CoinGecko-provided images when available.

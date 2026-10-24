@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const marketSymbols = ["BTC", "ETH", "BNB", "HYPE"] as const;
+export const marketSymbols = ["BTC", "ETH", "BNB", "SOL", "HYPE"] as const;
 export type MarketSymbol = (typeof marketSymbols)[number];
 export type MarketAsset = {
   symbol: MarketSymbol;
@@ -13,10 +13,10 @@ export type MarketAsset = {
 export type MarketSnapshot = { assets: MarketAsset[]; source: "CoinGecko"; updatedAt: string };
 
 const ids: Record<MarketSymbol, string> = {
-  BTC: "bitcoin", ETH: "ethereum", BNB: "binancecoin", HYPE: "hyperliquid",
+  BTC: "bitcoin", ETH: "ethereum", BNB: "binancecoin", SOL: "solana", HYPE: "hyperliquid",
 };
 const names: Record<MarketSymbol, string> = {
-  BTC: "Bitcoin", ETH: "Ethereum", BNB: "BNB", HYPE: "Hyperliquid",
+  BTC: "Bitcoin", ETH: "Ethereum", BNB: "BNB", SOL: "Solana", HYPE: "Hyperliquid",
 };
 const entry = z.object({
   id: z.string(),
@@ -35,9 +35,9 @@ function safeLogo(url: string | null | undefined): string | null {
   } catch { return null; }
 }
 
-/** One market-data request for all four ticker assets, cached server-side for 90 sec. */
+/** One market-data request for all five ticker assets, cached server-side for 90 sec. */
 export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
-  const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin%2Cethereum%2Cbinancecoin%2Chyperliquid&price_change_percentage=24h";
+  const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin%2Cethereum%2Cbinancecoin%2Csolana%2Chyperliquid&price_change_percentage=24h";
   const headers: Record<string, string> = { accept: "application/json" };
   if (process.env.COINGECKO_DEMO_API_KEY) headers["x-cg-demo-api-key"] = process.env.COINGECKO_DEMO_API_KEY;
   const response = await fetch(url, {
