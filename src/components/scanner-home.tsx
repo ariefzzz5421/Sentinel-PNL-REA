@@ -133,7 +133,7 @@ export function ScannerHome() {
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
-          <p>Scan NFT buys and sales across supported networks. Estimated PnL uses available priced events.</p>
+          <p>Analyze NFT trades and realized PnL across supported chains.</p>
         </div>
         <section className="scanner-form" aria-label="Wallet scanner">
           <div className="scanner-primary-row">
