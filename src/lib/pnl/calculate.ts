@@ -10,6 +10,8 @@ export type CollectionSummary = {
   name: string;
   buys: number;
   sells: number;
+  mints: number;
+  transfersIn: number;
   spentEth: string;
   receivedEth: string;
   realizedEth: string;
@@ -24,6 +26,8 @@ export type PnlSummary = {
   volumeEth: string;
   buys: number;
   sells: number;
+  mints: number;
+  transfersIn: number;
   wins: number;
   losses: number;
   unknownBasisSales: number;
@@ -39,13 +43,15 @@ const keyOf = (event: TradeEvent) =>
 
 /** One NFT lot per token ID. Sales without a matching buy retain unknown cost basis. */
 export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
-  const positions = new Map<string, { cost: Decimal; collectionKey: string; feeKnown: boolean }>();
+  const positions = new Map<string, { cost: Decimal | null; collectionKey: string; feeKnown: boolean }>();
   const collectionMap = new Map<
     string,
     {
       name: string;
       buys: number;
       sells: number;
+      mints: number;
+      transfersIn: number;
       spent: Decimal;
       received: Decimal;
       realized: Decimal;
@@ -62,6 +68,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     fees = zero(),
     buys = 0,
     sells = 0,
+    mints = 0,
+    transfersIn = 0,
     wins = 0,
     losses = 0,
     unknown = 0,
@@ -75,6 +83,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
       name: event.collection,
       buys: 0,
       sells: 0,
+      mints: 0,
+      transfersIn: 0,
       spent: zero(),
       received: zero(),
       realized: zero(),
@@ -83,22 +93,31 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     collectionMap.set(collectionKey, col);
     const included = !from || new Date(event.date) >= from;
     if (event.type !== "sell") {
-      // Cost is retained even if the purchase predates the selected sale window.
+      // An observed mint or incoming transfer proves acquisition, not its ETH cost.
+      // Unknown basis must survive until sale and must never become a free purchase.
+      const prior = positions.get(key);
+      const basisKnown = event.basisKnown !== false && event.type !== "transfer_in";
+      // The sender may transfer tokens bought elsewhere. No cost is inferred.
+      const cost = basisKnown && (!prior || prior.cost !== null)
+        ? (prior?.cost || zero()).plus(amount).plus(fee) : null;
       positions.set(key, {
-        cost: (positions.get(key)?.cost || zero()).plus(amount).plus(fee),
-        collectionKey,
-        feeKnown: (positions.get(key)?.feeKnown ?? true) && event.feeKnown !== false,
+        cost, collectionKey,
+        feeKnown: (prior?.feeKnown ?? true) && event.feeKnown !== false,
       });
       if (included) {
-        buys++;
-        spent = spent.plus(amount).plus(fee);
-        fees = fees.plus(fee);
-        col.buys++;
-        col.spent = col.spent.plus(amount).plus(fee);
+        if (event.type === "buy") {
+          buys++; col.buys++;
+          spent = spent.plus(amount).plus(fee);
+          fees = fees.plus(fee);
+          col.spent = col.spent.plus(amount).plus(fee);
+        } else if (event.type === "mint") {
+          mints++; col.mints++;
+        } else if (event.type === "transfer_in") {
+          transfersIn++; col.transfersIn++;
+        }
         result.push({
-          ...event,
-          costEth: amount.plus(fee).toString(),
-          realizedEth: null,
+          ...event, costEth: cost?.toString() ?? null, realizedEth: null,
+          note: cost === null ? "Acquisition basis not verified" : undefined,
         });
       }
       continue;
@@ -112,7 +131,7 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     fees = fees.plus(fee);
     col.sells++;
     col.received = col.received.plus(amount).minus(fee);
-    if (!cost) {
+    if (cost === null || cost === undefined) {
       unknown++;
       col.unknown++;
       result.push({
@@ -150,6 +169,8 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
     volumeEth: spent.plus(received).toString(),
     buys,
     sells,
+    mints,
+    transfersIn,
     wins,
     losses,
     unknownBasisSales: unknown,
@@ -161,13 +182,15 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
         name: c.name,
         buys: c.buys,
         sells: c.sells,
+        mints: c.mints,
+        transfersIn: c.transfersIn,
         spentEth: c.spent.toString(),
         receivedEth: c.received.toString(),
         realizedEth: c.realized.toString(),
         openPositions: openByCollection.get(key) || 0,
         unknownBasisSales: c.unknown,
       }))
-      .filter((c) => c.buys || c.sells || c.openPositions)
+      .filter((c) => c.buys || c.mints || c.transfersIn || c.sells || c.openPositions)
       .sort((a, b) => new Decimal(b.realizedEth).cmp(a.realizedEth)),
   };
 }
