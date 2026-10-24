@@ -59,12 +59,12 @@ describe("Reservoir activity adapter", () => {
     const fetcher = vi.fn(async () => new Response("", { status: 429 }));
     await expect(getReservoirEvents(input, "fixture-key", fetcher as typeof fetch)).rejects.toMatchObject({ status: 429 });
   });
-  it.each(["robinhood", "arc"])("keeps %s scans unavailable until a verified adapter exists", async (chain) => {
+  it.each(["robinhood", "arc"])("returns an actionable %s scan configuration message", async (chain) => {
     const response = await POST(new Request("http://localhost/api/scan", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...input, chain }),
     }));
     expect(response.status).toBe(503);
-    expect((await response.json()).error).toContain("RPC alone does not provide complete trades or PnL");
+    expect((await response.json()).error).toContain(chain === "arc" ? "USDC-native PnL support" : "OPENSEA_API_KEY");
   });
 });

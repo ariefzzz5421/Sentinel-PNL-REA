@@ -14,7 +14,7 @@ export type PublicHolding = {
 type Filter = "recent" | "best" | "holding";
 type CollectionRow = {
   key: string; name: string; chain: Chain; contract: string;
-  image: string | null; bought: number; sold: number; held: number | null;
+  image: string | null; bought: number; sold: number; minted: number; transfersIn: number; held: number | null;
   pnl: string | null; latest: string; unknown: number; estimated: boolean;
   trades: CalculatedTrade[];
 };
@@ -58,7 +58,7 @@ function collectionRows(events: TradeEvent[], holdings: PublicHolding[], holding
       chain: (first?.chain || holding?.chain || "ethereum") as Chain,
       contract: first?.contract || holding?.contract || "",
       image: safeImage(holding?.imageUrl || first?.imageUrl),
-      bought: summary.buys, sold: summary.sells, held: holding ? holding.held : holdingsComplete ? 0 : null,
+      bought: summary.buys, sold: summary.sells, minted: summary.mints, transfersIn: summary.transfersIn, held: holding ? holding.held : holdingsComplete ? 0 : null,
       pnl: matched > 0 ? summary.realizedEth : null,
       latest, unknown: summary.unknownBasisSales,
       estimated: summary.estimatedSales > 0,

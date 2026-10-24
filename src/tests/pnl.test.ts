@@ -45,6 +45,16 @@ describe("NFT PnL accounting", () => {
     expect(result.openPositions).toBe(1);
     expect(result.realizedEth).toBe("0");
   });
+  it("never classifies an unpriced mint as a free acquisition or realized gain", () => {
+    const mint = { ...trade("mint-unknown", "2026-01-01T00:00:00Z", "mint", "0"), basisKnown: false };
+    const sell = trade("sell-after-mint", "2026-02-01T00:00:00Z", "sell", "1");
+    const result = calculatePnl([mint, sell]);
+    expect(result.mints).toBe(1);
+    expect(result.buys).toBe(0);
+    expect(result.unknownBasisSales).toBe(1);
+    expect(result.realizedEth).toBe("0");
+    expect(result.trades.find((t) => t.type === "sell")?.realizedEth).toBeNull();
+  });
   it("does not match a sale in a different wallet", () => {
     const otherWallet = "0x0000000000000000000000000000000000000002";
     const result = calculatePnl([

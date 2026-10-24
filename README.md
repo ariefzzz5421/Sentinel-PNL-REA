@@ -109,3 +109,13 @@ The home scanner now includes a compact, animated market tape: BTC, ETH, BNB, HY
 The NFT card studio shares the exact same ETH quote from `/api/market/eth-usd`, renders the estimated ETH PnL alongside approximate current USD conversion (e.g. `+0.0040 ETH ≈ $8.00` when ETH is $2,000), and shows a provider timestamp. This **is not historical trade USD PnL**. USD is omitted if the live quote is offline or stale (>10 min). Fonts, alias, background, size and Complete/Simple controls redraw the preview; PNG export renders again from those same selected settings. Share on X only supplies text; images must be attached manually.
 
 Useful data references: https://docs.coingecko.com/reference/coins-markets, https://support.coingecko.com/articles/4315804955-can-i-use-coingecko-data-and-screenshots-for-my-website-book-etc.
+
+## NFT mint history and compact share-card layout
+
+The OpenSea adapter now queries `sale`, `mint`, and `transfer` event history separately on the selected chain. Sale history remains capped at 1,200 entries, mint history at 600, and inbound transfers at 400. The two supplementary requests run alongside sales; if supplementary data is unavailable, sales can still load and the result remains partial. One purchase and the associated NFT transfer with the same tx/contract/token is deduplicated.
+
+**Mint accounting:** minted NFTs and transferred-in NFTs contribute to independent event counts, **not purchases**. Mint transfer-like events may not contain exact mint payment or gas; imported `mint`/`transfer_in` events set `basisKnown:false`. The PnL engine retains the lot with unknown cost basis so a later sale is never assigned free acquisition cost. Not all third-party mints are indexed on OpenSea; for missing history, transaction receipt/blockchain indexer support remains future work. ERC-1155 batch mints remain intentionally unsupported.
+
+The share-card PNG now uses only the Sentinel icon in the upper left, keeps ETH and spot-USD on one line (or reversed in USD mode), and shows spot USD beside AVG BUY, AVG SALE, TOTAL INVESTED, and TOTAL SALES. The card footer displays the optional user alias above the full wallet address. Caveats about estimated profits, incomplete history, and spot conversion remain **outside** the image in the studio's methodology text and scan details. Do not treat current USD conversion as historical cost basis.
+
+Performance improvements include: memoized image decoding (with bounded size), 75ms debounce for edit-triggered Canvas redraw, server-cached CoinGecko market data, and independent paginated event-type fetches so supplementary feed errors don't wipe out supported sales.

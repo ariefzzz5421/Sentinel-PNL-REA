@@ -6,7 +6,7 @@ import type { CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain } from "@/lib/schema";
 
 export type StudioCollection = {
-  name: string; chain: Chain; bought: number; sold: number; held: number | null;
+  name: string; chain: Chain; bought: number; sold: number; minted: number; transfersIn: number; held: number | null;
   image: string | null; pnl: string | null; trades: CalculatedTrade[];
 };
 type StudioMode = "complete" | "simple";
@@ -39,7 +39,19 @@ function blobFromCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
     (blob) => blob ? resolve(blob) : reject(new Error("Could not generate PNG.")), "image/png",
   ));
 }
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
 async function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  const cached = !src.startsWith("blob:") && imageCache.get(src);
+  if (cached) return cached;
+  const task = loadUncachedImage(src);
+  if (!src.startsWith("blob:")) {
+    if (imageCache.size > 35) imageCache.delete(imageCache.keys().next().value!);
+    imageCache.set(src, task);
+    void task.catch(() => imageCache.delete(src));
+  }
+  return task;
+}
+async function loadUncachedImage(src: string): Promise<HTMLImageElement> {
   const img = new window.Image();
   img.crossOrigin = "anonymous";
   img.src = src;
@@ -71,7 +83,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const metrics = useMemo(() => {
-    const buys = row.trades.filter((t) => t.type === "buy" || t.type === "mint");
+    const buys = row.trades.filter((t) => t.type === "buy");
     const sells = row.trades.filter((t) => t.type === "sell");
     const realized = sells.filter((t) => t.realizedEth !== null);
     const totalBuy = buys.reduce((n, t) => n + Number(t.amountEth), 0);
@@ -123,9 +135,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const nativePnl = row.pnl === null ? null : Number(row.pnl);
   const pairedValue = nativePnl === null ? null : coin === "ETH" ? (quote ? nativePnl * quote : null) : nativePnl;
   const aliasText = alias.trim().slice(0, 32);
-  const walletLabel = wallet && wallet.length > 15 ? wallet.slice(0, 7) + "…" + wallet.slice(-5) : "Public wallet";
+  const walletLabel = wallet || "Multiple public wallets";
   const imageSize = cardSize === "image" && background ? Math.min(1.85, Math.max(0.85, backgroundRatio)) : 1200 / 700;
-  const minimumHeight = mode === "complete" ? 1080 : alias.trim() ? 750 : 690;
+  const minimumHeight = mode === "complete" ? 1010 : 670;
   const canvasHeight = cardSize === "image" && background ? Math.max(minimumHeight, Math.round(1200 / imageSize)) : minimumHeight;
 
   async function render(target: HTMLCanvasElement) {
@@ -149,8 +161,10 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     c.fillStyle = "rgba(7,6,16,.88)"; c.fillRect(36, 36, w - 72, h - 72);
     c.strokeStyle = "#614780"; c.lineWidth = 2; c.strokeRect(36, 36, w - 72, h - 72);
     const fontFamily = fonts[font];
-    c.fillStyle = "#ae93ff"; c.font = "bold 27px Arial";
-    c.fillText("◈ SENTINEL PNL", 84, 102);
+    try {
+      const logo = await loadCanvasImage("/sentinel-logo.svg");
+      c.drawImage(logo, 78, 69, 53, 53);
+    } catch { c.fillStyle = "#bda2ee"; c.font = "bold 36px Arial"; c.fillText("◈", 84, 104); }
     c.fillStyle = "#67d3ff"; c.font = "bold 24px Arial"; c.textAlign = "right";
     c.fillText(row.chain.toUpperCase(), w - 84, 102); c.textAlign = "left";
     c.fillStyle = "#faf8ff"; c.font = "bold 50px " + fontFamily;
@@ -164,53 +178,61 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         c.restore();
       } catch { /* External artwork may block CORS; never prevent image export. */ }
     }
-    if (aliasText) {
-      c.font = aliasSize + "px " + fontFamily; c.fillStyle = "#c8bbdc";
-      c.fillText("@" + aliasText.replace(/^@/, ""), 86, 237);
-    }
-    const originY = aliasText ? 310 : 275;
+    const originY = 255;
     const rows = [
       ["BOUGHT", String(row.bought)], ["SOLD", String(row.sold)],
       ["HOLD", row.held === null ? "—" : String(row.held)],
     ];
-    c.font = "bold 76px " + fonts.plex;
+    c.font = "bold 72px " + fonts.plex;
     c.fillStyle = profit === null ? "#c1b4d5" : profit < 0 ? "#ff8192" : "#33dea1";
-    const mainValue = profit === null ? "—" : coin === "USD" ? (profit > 0 ? "+$" : profit < 0 ? "-$" : "$") + Math.abs(profit).toFixed(2) : fmt(profit, coin) + " ETH";
-    c.fillText(mainValue, 85, originY + 44, 685);
-    c.textAlign = "right";
-    c.font = "bold 31px " + fonts.plex;
-    c.fillStyle = "#d8d0e8";
-    const pairedText = pairedValue === null ? (quoteError ? "FX unavailable" : "—") :
-      coin === "ETH" ? "≈ " + (pairedValue < 0 ? "-$" : pairedValue > 0 ? "+$" : "$") + Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fmt(pairedValue, "ETH") + " ETH";
-    c.fillText(pairedText, w - 82, originY + 19, 300);
-    c.font = "19px Arial"; c.fillStyle = "#9e93b1";
-    c.fillText(quoteAt ? "USD spot · CoinGecko" : "USD quote unavailable", w - 82, originY + 53);
+    const mainValue = profit === null ? "—" : coin === "USD"
+      ? (profit > 0 ? "+$" : profit < 0 ? "-$" : "$") + Math.abs(profit).toFixed(2)
+      : fmt(profit, coin) + " ETH";
+    c.fillText(mainValue, 85, originY + 44, 730);
+    c.textAlign = "right"; c.font = "bold 37px " + fonts.plex;
+    c.fillStyle = "#e1d6ed";
+    const secondary = pairedValue === null ? "(—)" : coin === "ETH"
+      ? "(" + (pairedValue < 0 ? "-$" : "$") + Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")"
+      : "(" + fmt(pairedValue, "ETH") + " ETH)";
+    c.fillText(secondary, w - 83, originY + 44, 285);
     c.textAlign = "left";
-    c.fillStyle = "#baa8c7"; c.font = "22px Arial";
-    c.fillText("ESTIMATED REALIZED PNL  ·  " + (partial ? "PARTIAL HISTORY" : "SUPPORTED SALES ONLY"), 87, originY + 87);
     c.strokeStyle = "#4f3a64"; c.beginPath(); c.moveTo(85, originY + 113);
     c.lineTo(w - 85, originY + 113); c.stroke();
-    let y = originY + 157;
-    function detail(label: string, value: string, color = "#f4ecff") {
-      c.textAlign = "left"; c.fillStyle = "#a99bb7"; c.font = "22px " + fontFamily;
+    let y = originY + 136;
+    function textRow(label: string, value: string, usd: number | null = null, accent = "#f4ecff") {
+      c.textAlign = "left"; c.fillStyle = "#aca0bc"; c.font = "600 22px " + fontFamily;
       c.fillText(label, 88, y);
-      c.textAlign = "right"; c.fillStyle = color; c.font = "bold 28px " + fontFamily;
-      c.fillText(value, w - 88, y); c.textAlign = "left"; y += 47;
+      c.textAlign = "right"; c.fillStyle = accent; c.font = "bold 27px " + fonts.plex;
+      const metric = value;
+      c.fillText(metric, usd === null ? w - 88 : w - 380, y, usd === null ? 590 : 350);
+      if (usd !== null) {
+        c.fillStyle = "#9e9bb4"; c.font = "500 22px " + fonts.plex;
+        c.fillText("(" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")", w - 88, y, 260);
+      }
+      c.textAlign = "left"; y += 46;
     }
-    for (const [label, value] of rows) detail(label, value);
+    for (const [label, value] of rows) textRow(label, value);
     if (mode === "complete") {
-      detail("MINTED", "—");
-      detail("TRANSFER IN", "—");
-      const convert = (n: number | null) => n === null ? "—" : (exchange(n) || 0).toFixed(coin === "USD" ? 2 : 4);
-      detail("AVG BUY", convert(metrics.avgBuy));
-      detail("AVG SALE", convert(metrics.avgSale));
-      detail("TOTAL INVESTED", convert(metrics.invested));
-      detail("TOTAL SALES", convert(metrics.sales));
-      detail("MATCHED ROI", metrics.roi === null ? "—" : (metrics.roi > 0 ? "+" : "") + metrics.roi.toFixed(2) + "%",
-        metrics.roi !== null && metrics.roi < 0 ? "#ff8192" : "#3bdda5");
+      textRow("MINTED", String(row.minted));
+      textRow("TRANSFER IN", String(row.transfersIn));
+      const metric = (amount: number | null) => amount === null ? "—" : coin === "ETH" ? amount.toFixed(4) : (quote ? (amount * quote).toFixed(2) : "—");
+      const convertUsd = (amount: number | null) => amount === null || quote === null ? null
+        : coin === "ETH" ? amount * quote : amount;
+      textRow("AVG BUY", metric(metrics.avgBuy), convertUsd(metrics.avgBuy));
+      textRow("AVG SALE", metric(metrics.avgSale), convertUsd(metrics.avgSale));
+      textRow("TOTAL INVESTED", metric(metrics.invested), convertUsd(metrics.invested));
+      textRow("TOTAL SALES", metric(metrics.sales), convertUsd(metrics.sales));
+      textRow("MATCHED ROI", metrics.roi === null ? "—" : (metrics.roi > 0 ? "+" : "") + metrics.roi.toFixed(2) + "%",
+        null, metrics.roi !== null && metrics.roi < 0 ? "#ff8192" : "#3bdda5");
     }
-    c.font = "19px Arial"; c.fillStyle = "#aaa0ba";
-    c.fillText(walletLabel + "  ·  Indicative PnL, not tax-grade or complete trade history.", 85, h - 78, w - 160);
+    // Wallet identity belongs in the footer. Alias is optional, wallet address always visible.
+    const aliasY = h - 108;
+    if (aliasText) {
+      c.fillStyle = "#e0cdf7"; c.font = "bold " + aliasSize + "px " + fontFamily;
+      c.fillText("@" + aliasText.replace(/^@/, ""), 87, aliasY, w - 170);
+    }
+    c.font = "19px " + fonts.plex; c.fillStyle = "#aaa0ba";
+    c.fillText(walletLabel, 87, h - 70, w - 175);
     if (id !== renderSerial.current) return false;
     target.width = w; target.height = h;
     const output = target.getContext("2d");
@@ -220,10 +242,12 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   }
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas) void render(canvas).catch(() => setNotice("Cannot draw card preview."));
+    if (!canvas) return;
+    const timer = window.setTimeout(() => void render(canvas).catch(() => setNotice("Cannot draw card preview.")), 75);
+    return () => window.clearTimeout(timer);
     // Render depends on every visible card setting.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [row, mode, unit, quote, quoteAt, quoteError, background, canvasHeight, font, aliasSize, alias, partial]);
+  }, [row, mode, unit, quote, background, canvasHeight, font, aliasSize, alias]);
 
   async function save(share: boolean) {
     const canvas = canvasRef.current;
@@ -282,7 +306,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     </div>
     <button type="button" className="studio-download" disabled={busy} onClick={() => void save(false)}><Download size={18}/> {busy ? "Preparing…" : "Download PNG"}</button>
     <div className="studio-rendered"><canvas ref={canvasRef} aria-label="Sentinel PnL card preview"/></div>
-    <div className="studio-rate"><span>ETH ↔ USD · {quote ? "$" + quote.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "Quote unavailable"}</span><span>{quoteAt ? "Updated " + new Date(quoteAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "No live FX"}</span></div>
+
     <div className="studio-export-actions"><button type="button" disabled={busy} onClick={() => void save(true)}><Share2 size={16}/> Share image</button></div>
     <details className="studio-custom" open>
       <summary>Customize card</summary>
@@ -300,7 +324,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         <label>Alias size <div className="studio-range"><input type="range" min="16" max="42" value={aliasSize} onChange={(e) => setAliasSize(Number(e.target.value))}/><span>{aliasSize}px</span></div></label>
       </div>
     </details>
-    <p className="studio-caveat">Gas, mint/transfer basis and some payment currencies are not indexed. USD shows a current exchange-rate approximation, not the historical value at each trade. Card metrics are estimates.</p>
+    <p className="studio-caveat">NFT profit is estimated when historical mint cost, gas, or marketplace fees are missing. USD uses the current market rate, not the historical transaction rate. {quoteAt ? `FX updated ${new Date(quoteAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}.` : "Live FX unavailable."}</p>
     {notice && <p className="studio-notice" role="status">{notice}</p>}
   </div>;
 }
