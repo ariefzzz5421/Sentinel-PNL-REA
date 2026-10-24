@@ -136,7 +136,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     if (!context) throw new Error("Canvas unavailable.");
     const c: CanvasRenderingContext2D = context;
     const w = buffer.width, h = buffer.height;
-    try { await document.fonts.load("700 52px " + fonts[font].split(",")[0]); } catch { /* Fallback font remains visible. */ }
+    try { await Promise.all([document.fonts.load("700 52px " + fonts[font].split(",")[0]), document.fonts.load("700 76px " + fonts.plex.split(",")[0])]); } catch { /* Fall back without suppressing export. */ }
     const gradient = c.createLinearGradient(0, 0, w, h);
     gradient.addColorStop(0, "#120e1e"); gradient.addColorStop(1, "#27183d");
     c.fillStyle = gradient; c.fillRect(0, 0, w, h);
@@ -175,13 +175,13 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     ];
     c.font = "bold 76px " + fonts.plex;
     c.fillStyle = profit === null ? "#c1b4d5" : profit < 0 ? "#ff8192" : "#33dea1";
-    const mainValue = profit === null ? "—" : (coin === "USD" ? "$" : "") + fmt(profit, coin) + (coin === "ETH" ? " ETH" : "");
+    const mainValue = profit === null ? "—" : coin === "USD" ? (profit > 0 ? "+$" : profit < 0 ? "-$" : "$") + Math.abs(profit).toFixed(2) : fmt(profit, coin) + " ETH";
     c.fillText(mainValue, 85, originY + 44, 685);
     c.textAlign = "right";
     c.font = "bold 31px " + fonts.plex;
     c.fillStyle = "#d8d0e8";
     const pairedText = pairedValue === null ? (quoteError ? "FX unavailable" : "—") :
-      coin === "ETH" ? "≈ $" + Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fmt(pairedValue, "ETH") + " ETH";
+      coin === "ETH" ? "≈ " + (pairedValue < 0 ? "-$" : pairedValue > 0 ? "+$" : "$") + Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fmt(pairedValue, "ETH") + " ETH";
     c.fillText(pairedText, w - 82, originY + 19, 300);
     c.font = "19px Arial"; c.fillStyle = "#9e93b1";
     c.fillText(quoteAt ? "USD spot · CoinGecko" : "USD quote unavailable", w - 82, originY + 53);
