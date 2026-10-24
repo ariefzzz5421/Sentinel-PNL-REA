@@ -1968,3 +1968,44 @@ td small {
   .studio-custom{padding:14px}
   .studio-rendered canvas{width:100%;max-width:100%}
 }
+
+
+/* Sentinel's default typography: Space Grotesk headings, Satoshi UI, Plex Mono data. */
+:root { --sentinel-ui:"Satoshi",var(--font-inter),Arial,sans-serif; --sentinel-head:var(--font-space-grotesk),Arial,sans-serif; --sentinel-data:var(--font-plex),monospace; }
+body,button,input,textarea,select{font-family:var(--sentinel-ui)}
+.scanner-brand,.scanner-intro h1,.profile-hero h1,.personal-section-head h2,.scan-collection-title strong,.scan-modal-head h2{font-family:var(--sentinel-head)}
+.scanner-brand{letter-spacing:.12em}
+.scanner-brand span{font-family:var(--font-orbitron),var(--sentinel-head);font-weight:700;font-size:.88em;letter-spacing:.05em}
+.scan-collection-pnl strong,.personal-pnl-hero>strong,.scan-collection-stats strong,.personal-stat-grid strong,.scan-poster-stats b{font-family:var(--sentinel-data);font-variant-numeric:tabular-nums}
+.scanner-intro h1{letter-spacing:-.04em}
+.market-tape{display:flex;align-items:center;gap:0;width:100%;max-width:100%;min-height:43px;margin:10px 0 0;border:1px solid #34324e;border-radius:11px;background:#100f22;overflow:hidden;position:relative}
+.tape-label{display:flex;align-items:center;gap:7px;flex:none;white-space:nowrap;padding:0 13px;color:#c8bbeb;font-size:10px;font-weight:800;letter-spacing:.08em;align-self:stretch;border-right:1px solid #302b4b}
+.tape-label span:last-child{font-size:9px;color:#77728d;letter-spacing:0}
+.tape-live-dot{height:7px;width:7px;border-radius:100%;background:#32dba5;box-shadow:0 0 9px #32dba590;display:inline-block}
+.tape-window{overflow:hidden;flex:1;min-width:0;mask-image:linear-gradient(90deg,transparent,#000 2%,#000 98%,transparent)}
+.tape-track{display:flex;width:max-content;animation:sentinel-tape-scroll 42s linear infinite}
+.market-tape:hover .tape-track,.market-tape:focus-within .tape-track{animation-play-state:paused}
+.tape-set{display:flex;align-items:center;flex:none;min-height:42px}
+.tape-asset{display:flex;gap:8px;align-items:center;padding:0 23px 0 7px;text-decoration:none;white-space:nowrap;font-size:11px;color:#c6c1d8}
+.tape-asset strong{font-size:11px;color:#f1eafb;font-weight:780}
+.tape-icon{height:20px;width:20px;object-fit:contain;border-radius:50%}
+.tape-fallback{display:inline-flex;align-items:center;justify-content:center;background:#302c4d;color:#fefafa;font-weight:800;font-size:11px}
+.tape-price{font-family:var(--sentinel-data);font-size:11px;font-variant-numeric:tabular-nums;color:#efebff}
+.tape-change{color:#9490a7;font-family:var(--sentinel-data);font-size:10px;font-variant-numeric:tabular-nums}
+.tape-change.is-up{color:#36dbaa}.tape-change.is-down{color:#ff819e}
+.tape-source{flex:none;font-size:9px;color:#958da9;white-space:nowrap;padding:0 10px;border-left:1px solid #302b4b}
+@keyframes sentinel-tape-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.studio-rate{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px;color:#aba4c3;font-family:var(--sentinel-data);font-size:11px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.studio-rate span:first-child{color:#76d8f5}
+.studio-custom{scroll-margin-top:20px}
+.studio-fields input:focus-visible,.studio-fields select:focus-visible{outline:2px solid #6fd7ff;outline-offset:2px}
+@media(max-width:650px){
+  .market-tape{min-height:39px;margin-top:8px}
+  .tape-label{padding:0 9px;font-size:9px}
+  .tape-label span:last-child{display:none}
+  .tape-asset{padding:0 15px 0 5px;gap:6px}
+  .tape-asset strong,.tape-price{font-size:10px}
+  .tape-source{padding:0 5px;font-size:8px}
+  .studio-rate{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.tape-track{animation:none!important}.tape-window{overflow-x:auto}.tape-set[aria-hidden="true"]{display:none}}
