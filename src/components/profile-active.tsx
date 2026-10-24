@@ -7,6 +7,8 @@ import { ArrowRight, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { eventsSchema, type Chain, type TradeEvent } from "@/lib/schema";
 import { calculatePnl } from "@/lib/pnl/calculate";
+import { MarketTape } from "@/components/market-tape";
+import { ProfileNftThumb } from "@/components/profile-nft-thumb";
 
 const STORE = "sentinel-pnl-events-v1";
 const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
@@ -42,6 +44,9 @@ export default function ActiveProfile() {
   const [hasScanned, setHasScanned] = useState(false);
   const [profile, setProfile] = useState<OpenSeaPublicProfile | null>(null);
   const [profileStatus, setProfileStatus] = useState("");
+  const [spotEthUsd, setSpotEthUsd] = useState<number | null>(null);
+  const [holdingArt, setHoldingArt] = useState<Map<string, string>>(new Map());
+  const [coverageNotes, setCoverageNotes] = useState<string[]>([]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -76,11 +81,72 @@ export default function ActiveProfile() {
     return () => { canceled = true; };
   }, [ready, authenticated, address]);
 
+
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      try {
+        const response = await fetch("/api/market/eth-usd", { cache: "no-store" });
+        if (!response.ok) throw new Error("Spot FX feed unavailable");
+        const value: unknown = await response.json();
+        if (!value || typeof value !== "object" || !("usd" in value) || !("updatedAt" in value)) throw new Error("Invalid FX quote");
+        const quote = (value as { usd: unknown }).usd;
+        const updatedAt = (value as { updatedAt: unknown }).updatedAt;
+        if (typeof quote !== "number" || !Number.isFinite(quote) || quote <= 0 ||
+            typeof updatedAt !== "string" || !Number.isFinite(Date.parse(updatedAt)) ||
+            Math.abs(Date.now() - Date.parse(updatedAt)) > 10 * 60_000) throw new Error("Stale FX quote");
+        if (active) setSpotEthUsd(quote);
+      } catch { if (active) setSpotEthUsd(null); }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 90_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+  // Holdings artwork augments transaction media, especially when a trade event omits NFT metadata.
+  useEffect(() => {
+    if (!authenticated || !address) return;
+    let canceled = false;
+    void fetch("/api/opensea/holdings?address=" + encodeURIComponent(address))
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Holdings artwork unavailable");
+        return response.json() as Promise<{ holdings?: Array<{ chain: string; contract: string; imageUrl: string | null }> }>;
+      })
+      .then((value) => {
+        if (canceled) return;
+        const next = new Map<string, string>();
+        for (const holding of value.holdings || []) {
+          if (holding.imageUrl?.startsWith("https://")) next.set(holding.chain + ":" + holding.contract.toLowerCase(), holding.imageUrl);
+        }
+        setHoldingArt(next);
+      }).catch(() => { if (!canceled) setHoldingArt(new Map()); });
+    return () => { canceled = true; };
+  }, [authenticated, address]);
+
   const personal = useMemo(
     () => events.filter((event) => event.wallet.toLowerCase() === address),
     [events, address],
   );
   const summary = useMemo(() => calculatePnl(personal), [personal]);
+  const previewByCollection = useMemo(() => {
+    const previews = new Map<string, string>();
+    const newestFirst = [...personal].sort((a, b) => b.date.localeCompare(a.date));
+    for (const event of newestFirst) {
+      const key = event.chain + ":" + (event.contract || event.collection).toLowerCase();
+      if (!previews.has(key) && event.imageUrl?.startsWith("https://")) previews.set(key, event.imageUrl);
+    }
+    return previews;
+  }, [personal]);
+  const collectionArtwork = (network: Chain, contract: string | null | undefined, name: string, direct?: string) => {
+    const key = network + ":" + (contract || name).toLowerCase();
+    return direct?.startsWith("https://") ? direct : previewByCollection.get(key) || holdingArt.get(key) || null;
+  };
+  const usdText = (eth: string | number, signed = false) => {
+    const ethAmount = Number(eth);
+    if (spotEthUsd === null || !Number.isFinite(ethAmount)) return null;
+    const usd = ethAmount * spotEthUsd;
+    return "(" + (usd < 0 ? "-$" : signed && usd > 0 ? "+$" : "$") +
+      Math.abs(usd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")";
+  };
   const knownSales = summary.sells - summary.unknownBasisSales;
   const hasSnapshot = personal.length > 0 || hasScanned;
   const hasKnownPnl = knownSales > 0;
@@ -97,6 +163,7 @@ export default function ActiveProfile() {
   const scanWallet = useCallback(async (wallet: string, targetChain: Chain | "all") => {
     setBusy(true);
     setNoticeError(false);
+    setCoverageNotes([]);
     const targets: Chain[] = targetChain === "all" ? ["ethereum", "base", "arbitrum", "robinhood"] : [targetChain];
     setNotice("Scanning public NFT trades on " + targets.map((name) => chainNames[name]).join(", ") + "…");
     try {
@@ -130,8 +197,11 @@ export default function ActiveProfile() {
       setHasScanned(true);
       setCoveragePartial(Boolean(failures.length || successes.some((result) => result.data.partial)));
       const count = successes.reduce((total, result) => total + result.data.events.length, 0);
-      setNotice(count + " supported NFT event(s) loaded across " + successes.length + " network(s). " +
-        successes.map((result) => result.data.warning || "").filter(Boolean).join(" ") + " " + failures.join(" "));
+      const detail = [ ...successes.map((result) => result.data.warning || ""), ...failures ];
+      const uniqueWarnings = [...new Set(detail.flatMap((text) => text.split(/(?<=\\.)\\s+/)).map((text) => text.trim()).filter(Boolean))];
+      setCoverageNotes(uniqueWarnings);
+      setNotice(""); // Success is reflected in the refreshed dashboard; no giant notification banner.
+      void count;
     } catch (error) {
       setNoticeError(true);
       setNotice(error instanceof Error ? error.message : "Unable to scan NFT history.");
@@ -196,8 +266,9 @@ export default function ActiveProfile() {
     </section>
 
     {address && <>
+      <div className="personal-market-tape"><MarketTape/></div>
       <div className="personal-toolbar">
-        <span className="personal-toolbar-label"><span className="personal-dot"/> {hasScanned ? "Latest scan completed" : "Public on-chain activity"}</span>
+        <span className="personal-toolbar-label">Wallet performance</span>
         <div className="profile-scan-actions">
           <select aria-label="Scan blockchain" value={chain} disabled={busy} onChange={(event) => { setChain(event.target.value as Chain); setNotice(""); setHasScanned(false); }}>
             <option value="all">All supported networks</option><option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option><option value="robinhood">Robinhood</option>
@@ -208,17 +279,22 @@ export default function ActiveProfile() {
         </div>
       </div>
 
-      {notice && <div className={`profile-notice ${noticeError ? "personal-error" : "personal-info"}`} role={noticeError ? "alert" : "status"}>{notice}</div>}
-      {coveragePartial && <p className="personal-disclaimer">Partial scan coverage: missing events can affect cost basis and estimated PnL.</p>}
+      {noticeError && notice && <div className="profile-notice personal-error" role="alert">{notice}</div>}
+      {coveragePartial && <details className="personal-coverage-details">
+        <summary>Partial history · PnL excludes unknown costs</summary>
+        <p>Some trading events, gas charges or mint costs were not available. Realized PnL is an estimate.</p>
+        {coverageNotes.length > 0 && <ul>{coverageNotes.slice(0, 12).map((text, i) => <li key={i}>{text}</li>)}</ul>}
+      </details>}
 
       <div className="personal-overview">
         <section className="personal-pnl-hero" aria-label="Realized profit and loss">
           <span className="personal-stat-label">REALIZED NFT PNL</span>
           <strong className={hasKnownPnl ? (Number(summary.realizedEth) >= 0 ? "personal-profit" : "personal-loss") : ""}>
             {hasKnownPnl ? `${Number(summary.realizedEth) > 0 ? "+" : ""}${amount(summary.realizedEth)} ETH` : "—"}
+            {hasKnownPnl && usdText(summary.realizedEth, true) && <span className="personal-overview-usd">{usdText(summary.realizedEth, true)}</span>}
           </strong>
           <p>{hasKnownPnl ? `${knownSales} sale(s) with known cost basis` : "No matched NFT buy → sell pair available yet."}</p>
-          <span className="personal-pnl-meta">{summary.unknownBasisSales} sale(s) with unknown cost basis · {summary.estimatedSales} sale(s) with estimated fees</span>
+
         </section>
         <div className="personal-stat-grid">
           <section><span>Purchases (supported)</span><strong>{hasSnapshot ? summary.buys : "—"}</strong><small>Supported NFT acquisitions</small></section>
