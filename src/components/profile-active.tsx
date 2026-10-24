@@ -266,7 +266,6 @@ export default function ActiveProfile() {
     {address && <>
       <div className="personal-market-tape"><MarketTape/></div>
       <div className="personal-toolbar">
-        <span className="personal-toolbar-label">Wallet performance</span>
         <div className="profile-scan-actions">
           <select aria-label="Scan blockchain" value={chain} disabled={busy} onChange={(event) => { setChain(event.target.value as Chain); setNotice(""); setHasScanned(false); }}>
             <option value="all">All supported networks</option><option value="ethereum">Ethereum</option><option value="base">Base</option><option value="arbitrum">Arbitrum</option><option value="robinhood">Robinhood</option>
@@ -358,8 +357,9 @@ export default function ActiveProfile() {
                 </div>
               </div>
               <div className="personal-trade-value">
-                <strong>{event.type === "transfer_in" || event.type === "mint" ? "—" : amount(event.amountEth) + " ETH"}</strong>
-                {event.type !== "transfer_in" && event.type !== "mint" && usdText(event.amountEth) && <span className="personal-usd-inline">{usdText(event.amountEth)}</span>}
+                <strong>{event.type === "transfer_in" || event.type === "mint" ? "—" : amount(event.amountEth) + " ETH"}
+                  {event.type !== "transfer_in" && event.type !== "mint" && usdText(event.amountEth) && <span className="personal-usd-inline">{usdText(event.amountEth)}</span>}
+                </strong>
               </div>
             </div>)}
           </div> : <p className="personal-empty">No supported NFT activity recorded yet.</p>}
