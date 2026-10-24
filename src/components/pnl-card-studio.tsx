@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Download, ImagePlus, Share2 } from "lucide-react";
 import type { CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain } from "@/lib/schema";
+import { scanChainById } from "@/lib/scan-chains";
 
 export type StudioCollection = {
   name: string; chain: Chain; bought: number; sold: number; minted: number; transfersIn: number; held: number | null;
@@ -72,8 +73,6 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const [quote, setQuote] = useState<number | null>(null);
   const [quoteAt, setQuoteAt] = useState<string | null>(null);
   const renderSerial = useRef(0);
-  const [quoteError, setQuoteError] = useState(false);
-  const [unit, setUnit] = useState<"ETH" | "USD">("ETH");
   const [alias, setAlias] = useState("");
   const [background, setBackground] = useState<string | null>(null);
   const [backgroundRatio, setBackgroundRatio] = useState(1200 / 700);
@@ -90,7 +89,6 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     const totalSell = sells.reduce((n, t) => n + Number(t.amountEth), 0);
     const matchedCost = realized.reduce((n, t) => n + Number(t.costEth || 0), 0);
     const matchedProfit = realized.reduce((n, t) => n + Number(t.realizedEth || 0), 0);
-    const knownGas = row.trades.every((t) => t.feeKnown !== false);
     return {
       avgBuy: buys.length ? totalBuy / buys.length : null,
       avgSale: sells.length ? totalSell / sells.length : null,
@@ -98,7 +96,6 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       sales: sells.length ? totalSell : null,
       roi: matchedCost > 0 ? (matchedProfit / matchedCost) * 100 : null,
       matched: realized.length,
-      knownGas,
     };
   }, [row.trades]);
 
@@ -114,9 +111,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         const timestamp = "updatedAt" in data && typeof data.updatedAt === "string" ? data.updatedAt : null;
         if (!timestamp || Number.isNaN(Date.parse(timestamp)) ||
           Math.abs(Date.now() - Date.parse(timestamp)) > 10 * 60_000) throw new Error("Stale FX quote");
-        if (active) { setQuote(data.usd); setQuoteAt(timestamp); setQuoteError(false); }
+        if (active) { setQuote(data.usd); setQuoteAt(timestamp); }
       } catch {
-        if (active) { setQuote(null); setQuoteAt(null); setQuoteError(true); }
+        if (active) { setQuote(null); setQuoteAt(null); }
       }
     };
     void refresh();
@@ -129,11 +126,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     return () => { if (background.startsWith("blob:")) URL.revokeObjectURL(background); };
   }, [background]);
 
-  const exchange = (n: number | null) => n === null ? null : unit === "USD" && quote ? n * quote : n;
-  const coin = unit === "USD" && quote ? "USD" : "ETH";
-  const profit = row.pnl === null ? null : exchange(Number(row.pnl));
-  const nativePnl = row.pnl === null ? null : Number(row.pnl);
-  const pairedValue = nativePnl === null ? null : coin === "ETH" ? (quote ? nativePnl * quote : null) : nativePnl;
+  // Keep ETH as the native unit; USD is a spot-rate annotation only.
+  const profit = row.pnl === null ? null : Number(row.pnl);
+  const pairedValue = profit === null || quote === null ? null : profit * quote;
   const aliasText = alias.trim().slice(0, 32);
   const walletLabel = wallet || "Multiple public wallets";
   const imageSize = cardSize === "image" && background ? Math.min(1.85, Math.max(0.85, backgroundRatio)) : 1200 / 700;
@@ -166,7 +161,15 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       c.drawImage(logo, 78, 69, 53, 53);
     } catch { c.fillStyle = "#bda2ee"; c.font = "bold 36px Arial"; c.fillText("◈", 84, 104); }
     c.fillStyle = "#67d3ff"; c.font = "bold 24px Arial"; c.textAlign = "right";
-    c.fillText(row.chain.toUpperCase(), w - 84, 102); c.textAlign = "left";
+    const chainTitle = row.chain.toUpperCase();
+    const titleWidth = c.measureText(chainTitle).width;
+    try {
+      const chainLogo = await loadCanvasImage(
+        row.chain === "base" ? "/chains/base-user.svg" : scanChainById(row.chain).icon,
+      );
+      c.drawImage(chainLogo, w - 84 - titleWidth - 40, 79, 28, 28);
+    } catch { /* Keep the chain name if its icon is temporarily unavailable. */ }
+    c.fillText(chainTitle, w - 84, 102); c.textAlign = "left";
     c.fillStyle = "#faf8ff"; c.font = "bold 50px " + fontFamily;
     c.fillText(shortName(row.name, 28), 85, 190, row.image ? 800 : w - 170);
     if (row.image) {
@@ -183,32 +186,26 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       ["BOUGHT", String(row.bought)], ["SOLD", String(row.sold)],
       ["HOLD", row.held === null ? "—" : String(row.held)],
     ];
-    c.font = "bold 72px " + fonts.plex;
-    c.fillStyle = profit === null ? "#c1b4d5" : profit < 0 ? "#ff8192" : "#33dea1";
-    const mainValue = profit === null ? "—" : coin === "USD"
-      ? (profit > 0 ? "+$" : profit < 0 ? "-$" : "$") + Math.abs(profit).toFixed(2)
-      : fmt(profit, coin) + " ETH";
-    c.fillText(mainValue, 85, originY + 44, 730);
-    c.textAlign = "right"; c.font = "bold 37px " + fonts.plex;
-    c.fillStyle = "#e1d6ed";
-    const secondary = pairedValue === null ? "(—)" : coin === "ETH"
-      ? "(" + (pairedValue < 0 ? "-$" : "$") + Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")"
-      : "(" + fmt(pairedValue, "ETH") + " ETH)";
-    c.fillText(secondary, w - 83, originY + 44, 285);
+    // One monospaced, single-colour baseline, with exactly one space before USD.
+    const mainValue = profit === null ? "—" : fmt(profit, "ETH") + " ETH";
+    const usdText = pairedValue === null ? "" : " (" +
+      (pairedValue < 0 ? "-$" : "$") +
+      Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")";
     c.textAlign = "left";
-    c.strokeStyle = "#4f3a64"; c.beginPath(); c.moveTo(85, originY + 113);
-    c.lineTo(w - 85, originY + 113); c.stroke();
-    let y = originY + 136;
+    c.fillStyle = profit === null ? "#c1b4d5" : profit < 0 ? "#ff8192" : "#33dea1";
+    c.font = "bold 63px " + fonts.plex;
+    c.fillText(mainValue + usdText, 85, originY + 44, w - 170);
+    c.strokeStyle = "#4f3a64"; c.beginPath(); c.moveTo(85, originY + 102);
+    c.lineTo(w - 85, originY + 102); c.stroke();
+    let y = originY + 153;
     function textRow(label: string, value: string, usd: number | null = null, accent = "#f4ecff") {
       c.textAlign = "left"; c.fillStyle = "#aca0bc"; c.font = "600 22px " + fontFamily;
-      c.fillText(label, 88, y);
+      c.fillText(label, 88, y, 510);
+      const usdText = usd === null ? "" :
+        " (" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")";
+      // One right-aligned text run: same font and colour, no artificially wide USD column.
       c.textAlign = "right"; c.fillStyle = accent; c.font = "bold 27px " + fonts.plex;
-      const metric = value;
-      c.fillText(metric, usd === null ? w - 88 : w - 380, y, usd === null ? 590 : 350);
-      if (usd !== null) {
-        c.fillStyle = "#9e9bb4"; c.font = "500 22px " + fonts.plex;
-        c.fillText("(" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")", w - 88, y, 260);
-      }
+      c.fillText(value + usdText, w - 88, y, 510);
       c.textAlign = "left"; y += 46;
     }
     for (const [label, value] of rows) textRow(label, value);
@@ -248,7 +245,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     return () => window.clearTimeout(timer);
     // Render depends on every visible card setting.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [row, mode, unit, quote, background, canvasHeight, font, aliasSize, alias]);
+  }, [row, mode, quote, background, canvasHeight, font, aliasSize, alias]);
 
   async function save(share: boolean) {
     const canvas = canvasRef.current;
@@ -271,7 +268,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     } finally { setBusy(false); }
   }
   function openX() {
-    const text = row.name + " · Estimated realized NFT PnL " + (profit === null ? "unavailable" : fmt(profit, coin) + " " + coin) +
+    const text = row.name + " · Estimated realized NFT PnL " + (profit === null ? "unavailable" : fmt(profit, "ETH") + " ETH") +
       "\nGenerated with Sentinel PNL · partial historical coverage may apply.";
     const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text);
     window.open(url, "_blank", "noopener,noreferrer");
@@ -298,10 +295,6 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         <button type="button" className={mode === "simple" ? "active" : ""} onClick={() => setMode("simple")}>Simple</button>
       </div>
       <div className="studio-controls">
-        <button type="button" aria-pressed={unit === "USD"} disabled={!quote} onClick={() => setUnit(unit === "ETH" ? "USD" : "ETH")}>
-          ETH ↔ USD {quoteError && <span title="Quote unavailable">(offline)</span>}
-        </button>
-        <button type="button" disabled={!metrics.knownGas} title={metrics.knownGas ? "Gas fees already reflected in PnL" : "Gas receipt data is unavailable"}>Gas {metrics.knownGas ? "included" : "unavailable"}</button>
         <button type="button" className="studio-x" onClick={openX}>Share on X</button>
       </div>
     </div>

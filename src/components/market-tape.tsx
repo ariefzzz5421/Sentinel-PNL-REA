@@ -39,8 +39,6 @@ export function MarketTape() {
   }, []);
   const known = new Map(snapshot?.assets.map((asset) => [asset.symbol, asset]) || []);
   const assets = marketSymbols.map((symbol) => known.get(symbol) || null);
-  const updatedAt = snapshot?.updatedAt ? new Date(snapshot.updatedAt) : null;
-  const updatedLabel = updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : null;
 
   function Cell({ asset, symbol }: { asset: MarketAsset | null; symbol: MarketSymbol }) {
     const change = asset?.change24h;
@@ -65,8 +63,8 @@ export function MarketTape() {
         <div className="tape-set" aria-hidden="true">{assets.map((asset, i) => <Cell key={"duplicate-" + marketSymbols[i]} asset={asset} symbol={marketSymbols[i]}/>)}</div>
       </div>
     </div>
-    <div className="tape-source" title={updatedLabel ? "Quote updated around " + updatedLabel : "Market feed not loaded"}>
-      {unavailable ? "Feed offline" : updatedLabel ? "CG · " + updatedLabel : "Loading…"}
-    </div>
+    <span className="visually-hidden" role="status">
+      {unavailable ? "Price feed unavailable." : snapshot ? "Prices updated." : "Loading market prices."}
+    </span>
   </div>;
 }

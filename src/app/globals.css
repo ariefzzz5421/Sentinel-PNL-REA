@@ -2009,3 +2009,15 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .studio-rate{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.tape-track{animation:none!important}.tape-window{overflow-x:auto}.tape-set[aria-hidden="true"]{display:none}}
+
+/* Small Base icon from the user's provided reference artwork; consistent tab geometry. */
+.scanner-chains button img { width:21px; height:21px; flex:0 0 21px; object-fit:contain; border-radius:4px; }
+.studio-choice-bar { gap:12px; }
+.studio-controls { display:flex; width:100%; }
+.studio-controls .studio-x { flex:1; width:100%; min-height:42px; }
+.market-tape .tape-window { flex:1; }
+@media(max-width:600px){
+  .scanner-chains button img { width:19px;height:19px; flex:0 0 19px; }
+  .studio-controls { display:flex; }
+  .studio-controls .studio-x { width:100%;flex:1; }
+}

@@ -119,3 +119,9 @@ The OpenSea adapter now queries `sale`, `mint`, and `transfer` event history sep
 The share-card PNG now uses only the Sentinel icon in the upper left, keeps ETH and spot-USD on one line (or reversed in USD mode), and shows spot USD beside AVG BUY, AVG SALE, TOTAL INVESTED, and TOTAL SALES. The card footer displays the optional user alias above the full wallet address. Caveats about estimated profits, incomplete history, and spot conversion remain **outside** the image in the studio's methodology text and scan details. Do not treat current USD conversion as historical cost basis.
 
 Performance improvements include: memoized image decoding (with bounded size), 75ms debounce for edit-triggered Canvas redraw, server-cached CoinGecko market data, and independent paginated event-type fetches so supplementary feed errors don't wipe out supported sales.
+
+### Card and ticker UI refinements
+
+Share-card preview and downloaded PNG use a single tabular-monospace PnL baseline with ETH followed by a spot USD annotation separated by one space; all quoted dollar values in the table are compact, right-aligned beside the corresponding ETH metric. The divider has more room before the metric rows. A small per-chain logo is placed next to the top-right chain label. The ETH/USD display toggle and the disabled gas toggle were removed because their presence implied unsupported accounting controls. ETH is always the native accounting unit; USD is a display-only current-rate equivalent. Fees remain omitted when unknown.
+
+The top market tape no longer renders the visible CoinGecko/time pill; provider attribution and timestamps remain internal to the market-data response. The Base tab uses the user-provided blue square reference (recreated as a tiny SVG and normalized to the other chain logos). All existing chain availability / scan logic remains unchanged.
