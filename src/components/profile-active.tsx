@@ -196,12 +196,10 @@ export default function ActiveProfile() {
       setEvents(next);
       setHasScanned(true);
       setCoveragePartial(Boolean(failures.length || successes.some((result) => result.data.partial)));
-      const count = successes.reduce((total, result) => total + result.data.events.length, 0);
       const detail = [ ...successes.map((result) => result.data.warning || ""), ...failures ];
-      const uniqueWarnings = [...new Set(detail.flatMap((text) => text.split(/(?<=\\.)\\s+/)).map((text) => text.trim()).filter(Boolean))];
+      const uniqueWarnings = [...new Set(detail.flatMap((text) => text.split(/(?<=\.)\s+/)).map((text) => text.trim()).filter(Boolean))];
       setCoverageNotes(uniqueWarnings);
       setNotice(""); // Success is reflected in the refreshed dashboard; no giant notification banner.
-      void count;
     } catch (error) {
       setNoticeError(true);
       setNotice(error instanceof Error ? error.message : "Unable to scan NFT history.");
@@ -309,34 +307,62 @@ export default function ActiveProfile() {
           <div className="personal-section-head"><div><span className="personal-kicker">TOP PERFORMERS</span><h2>Biggest realized NFT PnL</h2></div></div>
           {biggestWins.length ? <div className="personal-collection-list">
             {biggestWins.map((trade) => <div className="personal-collection-row" key={trade.id}>
-              <div><strong>{trade.collection} #{trade.tokenId}</strong><small>{chainNames[trade.chain]} · Sold {new Date(trade.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</small></div>
-              <div className="personal-collection-result"><strong className="personal-profit">+{amount(trade.realizedEth || "0")} ETH</strong><small>{trade.note || "Matched buy → sell"}</small></div>
+              <div className="personal-row-main">
+                <ProfileNftThumb name={trade.collection} src={collectionArtwork(trade.chain, trade.contract, trade.collection, trade.imageUrl)}/>
+                <div className="personal-row-copy">
+                  <strong>{trade.collection} #{trade.tokenId}</strong>
+                  <small>{chainNames[trade.chain]} · Sold {new Date(trade.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</small>
+                </div>
+              </div>
+              <div className="personal-collection-result">
+                <strong className="personal-profit">+{amount(trade.realizedEth || "0")} ETH {usdText(trade.realizedEth || "0", true) && <span className="personal-usd-inline">{usdText(trade.realizedEth || "0", true)}</span>}</strong>
+              </div>
             </div>)}
-          </div> : <p className="personal-empty">No profitable matched buy → sell pairs in the available history. Unknown cost basis is never reported as profit.</p>}
+          </div> : <p className="personal-empty">No matched profitable sales in available trade history.</p>}
         </section>
         <section className="profile-panel personal-section personal-collections">
           <div className="personal-section-head"><div><span className="personal-kicker">BREAKDOWN</span><h2>Collection PnL</h2></div></div>
           {summary.collections.length ? <div className="personal-collection-list">
-            {summary.collections.slice(0, 7).map((collection, index) =>
-              <div className="personal-collection-row" key={`${collection.name}:${index}`}>
-                <div><strong>{collection.name}</strong><small>{collection.buys} buys · {collection.sells} sales</small></div>
+            {summary.collections.slice(0, 10).map((collection, index) =>
+              <div className="personal-collection-row" key={collection.chain + ":" + (collection.contract || collection.name) + ":" + index}>
+                <div className="personal-row-main">
+                  <ProfileNftThumb name={collection.name} src={collectionArtwork(collection.chain, collection.contract, collection.name)}/>
+                  <div className="personal-row-copy">
+                    <strong>{collection.name}</strong>
+                    <small>{chainNames[collection.chain]} · {collection.buys} bought · {collection.sells} sold</small>
+                  </div>
+                </div>
                 <div className="personal-collection-result">
-                  <strong className={Number(collection.realizedEth) >= 0 ? "personal-profit" : "personal-loss"}>{Number(collection.realizedEth) > 0 ? "+" : ""}{amount(collection.realizedEth)} ETH</strong>
-                  {collection.unknownBasisSales > 0 && <small>{collection.unknownBasisSales} unknown-basis sale(s)</small>}
+                  <strong className={Number(collection.realizedEth) >= 0 ? "personal-profit" : "personal-loss"}>
+                    {Number(collection.realizedEth) > 0 ? "+" : ""}{amount(collection.realizedEth)} ETH
+                    {usdText(collection.realizedEth, true) && <span className="personal-usd-inline">{usdText(collection.realizedEth, true)}</span>}
+                  </strong>
+                  {collection.unknownBasisSales > 0 && <small>{collection.unknownBasisSales} unmatched sale(s)</small>}
                 </div>
               </div>)}
-          </div> : <p className="personal-empty">No collection PnL yet. Refresh the scan or import NFT trade history.</p>}
+          </div> : <p className="personal-empty">No collection data yet. Refresh PnL to scan your trades.</p>}
         </section>
 
         <section className="profile-panel personal-section personal-activity">
           <div className="personal-section-head"><div><span className="personal-kicker">ACTIVITY</span><h2>Latest NFT trades</h2></div></div>
           {recent.length ? <div className="personal-trade-list">
             {recent.map((event) => <div key={event.id} className="personal-trade-row">
-              <span className={`personal-trade-badge ${event.type}`}>{event.type.toUpperCase()}</span>
-              <div><strong>{event.collection} #{event.tokenId}</strong><small>{chainNames[event.chain]} · {new Date(event.date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</small></div>
-              <strong>{amount(event.amountEth)} ETH</strong>
+              <div className="personal-row-main">
+                <ProfileNftThumb name={event.collection} src={collectionArtwork(event.chain, event.contract, event.collection, event.imageUrl)}/>
+                <div className="personal-row-copy">
+                  <div className="personal-trade-title">
+                    <strong>{event.collection} #{event.tokenId}</strong>
+                    <span className={`personal-trade-badge ${event.type}`}>{event.type === "transfer_in" ? "TRANSFER" : event.type.toUpperCase()}</span>
+                  </div>
+                  <small>{chainNames[event.chain]} · {new Date(event.date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</small>
+                </div>
+              </div>
+              <div className="personal-trade-value">
+                <strong>{event.type === "transfer_in" || event.type === "mint" ? "—" : amount(event.amountEth) + " ETH"}</strong>
+                {event.type !== "transfer_in" && event.type !== "mint" && usdText(event.amountEth) && <span className="personal-usd-inline">{usdText(event.amountEth)}</span>}
+              </div>
             </div>)}
-          </div> : <p className="personal-empty">No supported trades recorded for this wallet yet.</p>}
+          </div> : <p className="personal-empty">No supported NFT activity recorded yet.</p>}
         </section>
       </div>
 
