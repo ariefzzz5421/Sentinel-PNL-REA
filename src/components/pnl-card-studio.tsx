@@ -39,7 +39,19 @@ function blobFromCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
     (blob) => blob ? resolve(blob) : reject(new Error("Could not generate PNG.")), "image/png",
   ));
 }
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
 async function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  const cached = !src.startsWith("blob:") && imageCache.get(src);
+  if (cached) return cached;
+  const task = loadUncachedImage(src);
+  if (!src.startsWith("blob:")) {
+    if (imageCache.size > 35) imageCache.delete(imageCache.keys().next().value!);
+    imageCache.set(src, task);
+    void task.catch(() => imageCache.delete(src));
+  }
+  return task;
+}
+async function loadUncachedImage(src: string): Promise<HTMLImageElement> {
   const img = new window.Image();
   img.crossOrigin = "anonymous";
   img.src = src;
@@ -230,7 +242,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   }
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas) void render(canvas).catch(() => setNotice("Cannot draw card preview."));
+    if (!canvas) return;
+    const timer = window.setTimeout(() => void render(canvas).catch(() => setNotice("Cannot draw card preview.")), 75);
+    return () => window.clearTimeout(timer);
     // Render depends on every visible card setting.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [row, mode, unit, quote, background, canvasHeight, font, aliasSize, alias]);
