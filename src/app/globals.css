@@ -2165,3 +2165,11 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .personal-dashboard .personal-trade-badge { font-size:8px; padding:3px 5px; }
   .personal-dashboard .personal-collection-result strong { font-size:10px; }
 }
+
+/* Keep the live ETH amount and converted USD on the same row when space permits. */
+.personal-dashboard .personal-trade-value { max-width:46%; display:block; }
+.personal-dashboard .personal-trade-value strong { display:block; font-size:12px; white-space:normal; text-align:right; overflow-wrap:normal; }
+.personal-dashboard .personal-trade-value .personal-usd-inline { display:inline; margin-left:.35em; font-size:.9em; }
+@media(max-width:600px){
+  .personal-dashboard .personal-trade-value strong { font-size:11px; }
+}
