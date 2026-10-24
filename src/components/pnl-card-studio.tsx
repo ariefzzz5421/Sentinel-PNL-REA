@@ -165,7 +165,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     const titleWidth = c.measureText(chainTitle).width;
     try {
       const chainLogo = await loadCanvasImage(
-        row.chain === "base" ? "/chains/base-user.png" : scanChainById(row.chain).icon,
+        row.chain === "base" ? "/chains/base-user.svg" : scanChainById(row.chain).icon,
       );
       c.drawImage(chainLogo, w - 84 - titleWidth - 40, 79, 28, 28);
     } catch { /* Keep the chain name if its icon is temporarily unavailable. */ }
