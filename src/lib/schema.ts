@@ -38,7 +38,9 @@ export const eventSchema = z.object({
   tokenId: z.string().trim().min(1).max(100),
   /** Public image metadata is optional; never used for PnL calculations. */
   imageUrl: z.string().url().max(1800).optional(),
-  type: z.enum(["buy", "mint", "sell"]),
+  type: z.enum(["buy", "mint", "transfer_in", "sell"]),
+  /** False: source does not establish acquisition cost (e.g. free-looking mint). */
+  basisKnown: z.boolean().optional(),
   amountEth: z.string().regex(/^\d+(\.\d{1,18})?$/),
   feeEth: z.string().regex(/^\d+(\.\d{1,18})?$/),
   /** False means the provider did not expose transaction costs; feeEth is an accounting placeholder only. */
