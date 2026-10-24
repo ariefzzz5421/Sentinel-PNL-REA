@@ -8,6 +8,7 @@ import { scanChains, scanChainById, type ScanChain } from "@/lib/scan-chains";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
 import { ScanResults, type PublicHolding } from "@/components/scan-results";
+import { MarketTape } from "@/components/market-tape";
 
 const STORE = "sentinel-pnl-events-v1";
 export function ScannerHome() {
@@ -129,6 +130,7 @@ export function ScannerHome() {
         <div className="scanner-chains" role="group" aria-label="Blockchain">
           {scanChains.map((item) => <button key={item.id} type="button" onClick={() => setChain(item.id)} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : `${item.label}: supported network, USDC-native PnL not implemented` }>{"icon" in item ? <Image src={item.icon} width={19} height={19} alt=""/> : <span>●</span>}{item.label}</button>)}
         </div>
+        <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
           <p>Scan NFT buys and sales across supported networks. Estimated PnL uses available priced events.</p>
