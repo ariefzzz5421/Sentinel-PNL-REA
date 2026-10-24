@@ -48,7 +48,7 @@ export function ScannerHome() {
     setResultWarning("");
     const selected = scanChainById(chain);
     if (!selected.scanReady) {
-      setMessage(`${selected.label} network is configured (chain ${selected.chainId}), but is available on OpenSea, but Sentinel cannot calculate USDC-native NFT PnL for this chain yet. No ETH-denominated results will be fabricated.`);
+      setMessage(selected.unavailableReason);
       setError(true);
       return;
     }
@@ -128,7 +128,7 @@ export function ScannerHome() {
       </aside>
       <main className="scanner-main" id="scanner">
         <div className="scanner-chains" role="group" aria-label="Blockchain">
-          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => setChain(item.id)} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : `${item.label}: supported network, USDC-native PnL not implemented` }>{"icon" in item ? <Image src={item.icon} width={19} height={19} alt=""/> : <span>●</span>}{item.label}</button>)}
+          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => { setChain(item.id); setMessage(item.scanReady ? "" : item.unavailableReason); setError(false); setResultEvents(null); }} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : item.unavailableReason}><Image src={item.icon} width={19} height={19} alt=""/>{item.label}</button>)}
         </div>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
