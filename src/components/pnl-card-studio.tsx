@@ -131,111 +131,143 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
   const pairedValue = profit === null || quote === null ? null : profit * quote;
   const aliasText = alias.trim().slice(0, 32);
   const walletLabel = wallet || "Multiple public wallets";
-  const imageSize = cardSize === "image" && background ? Math.min(1.85, Math.max(0.85, backgroundRatio)) : 1200 / 700;
-  const minimumHeight = mode === "complete" ? 1010 : 670;
-  const canvasHeight = cardSize === "image" && background ? Math.max(minimumHeight, Math.round(1200 / imageSize)) : minimumHeight;
+  // Portrait-oriented card so native text remains readable after scaling to phone width.
+  const fixedHeight = mode === "complete" ? 1200 : 760;
+  const imageHeight = cardSize === "image" && background
+    ? Math.round(900 / Math.max(0.55, Math.min(1.8, backgroundRatio)))
+    : fixedHeight;
+  const canvasHeight = Math.max(fixedHeight, imageHeight);
 
   async function render(target: HTMLCanvasElement) {
-    const id = ++renderSerial.current;
+    const renderId = ++renderSerial.current;
     const buffer = document.createElement("canvas");
-    buffer.width = 1200; buffer.height = canvasHeight;
+    buffer.width = 900;
+    buffer.height = canvasHeight;
     const context = buffer.getContext("2d");
-    if (!context) throw new Error("Canvas unavailable.");
+    if (!context) throw new Error("Canvas unavailable");
     const c: CanvasRenderingContext2D = context;
     const w = buffer.width, h = buffer.height;
-    try { await Promise.all([document.fonts.load("700 52px " + fonts[font].split(",")[0]), document.fonts.load("700 76px " + fonts.plex.split(",")[0])]); } catch { /* Fall back without suppressing export. */ }
-    const gradient = c.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, "#120e1e"); gradient.addColorStop(1, "#27183d");
-    c.fillStyle = gradient; c.fillRect(0, 0, w, h);
+    const family = fonts[font];
+
+    try {
+      await Promise.all([
+        document.fonts.load("700 46px " + family.split(",")[0]),
+        document.fonts.load("700 46px " + fonts.plex.split(",")[0]),
+      ]);
+    } catch { /* Native fallback fonts stay available. */ }
+
+    const grad = c.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, "#120e1e"); grad.addColorStop(1, "#241530");
+    c.fillStyle = grad; c.fillRect(0, 0, w, h);
     if (background) {
-      try {
-        const img = await loadCanvasImage(background);
-        cover(c, img, w, h);
-      } catch { /* Invalid or CORS-blocked artwork is omitted from the exported image. */ }
+      try { cover(c, await loadCanvasImage(background), w, h); }
+      catch { /* Unsupported or revoked custom art is ignored safely. */ }
     }
-    c.fillStyle = "rgba(7,6,16,.88)"; c.fillRect(36, 36, w - 72, h - 72);
-    c.strokeStyle = "#614780"; c.lineWidth = 2; c.strokeRect(36, 36, w - 72, h - 72);
-    const fontFamily = fonts[font];
+    c.fillStyle = "rgba(7,6,16,.90)";
+    c.fillRect(20, 20, w - 40, h - 40);
+    c.strokeStyle = "#594475"; c.lineWidth = 2;
+    c.strokeRect(20, 20, w - 40, h - 40);
+
     try {
-      const logo = await loadCanvasImage("/sentinel-logo.svg");
-      c.drawImage(logo, 78, 69, 53, 53);
-    } catch { c.fillStyle = "#bda2ee"; c.font = "bold 36px Arial"; c.fillText("◈", 84, 104); }
-    c.fillStyle = "#67d3ff"; c.font = "bold 24px Arial"; c.textAlign = "right";
-    const chainTitle = row.chain.toUpperCase();
-    const titleWidth = c.measureText(chainTitle).width;
-    try {
-      const chainLogo = await loadCanvasImage(
-        row.chain === "base" ? "/chains/base-user.svg" : scanChainById(row.chain).icon,
-      );
-      c.drawImage(chainLogo, w - 84 - titleWidth - 40, 79, 28, 28);
-    } catch { /* Keep the chain name if its icon is temporarily unavailable. */ }
-    c.fillText(chainTitle, w - 84, 102); c.textAlign = "left";
-    c.fillStyle = "#faf8ff"; c.font = "bold 50px " + fontFamily;
-    c.fillText(shortName(row.name, 28), 85, 190, row.image ? 800 : w - 170);
+      c.drawImage(await loadCanvasImage("/sentinel-logo.svg"), 49, 43, 38, 38);
+    } catch { c.font = "bold 26px Arial"; c.fillStyle = "#ad85e8"; c.fillText("◈", 51, 72); }
+
+    const avatarX = 53, avatarY = 124, avatarSide = 100;
     if (row.image) {
       try {
         const artwork = await loadCanvasImage(row.image);
-        const side = 112, x = w - 205, y = 139;
-        c.save(); c.beginPath(); c.roundRect(x, y, side, side, 13); c.clip();
-        c.translate(x, y); cover(c, artwork, side, side);
+        c.save();
+        c.beginPath(); c.roundRect(avatarX, avatarY, avatarSide, avatarSide, 13); c.clip();
+        c.translate(avatarX, avatarY);
+        cover(c, artwork, avatarSide, avatarSide);
         c.restore();
-      } catch { /* External artwork may block CORS; never prevent image export. */ }
+      } catch {
+        c.fillStyle = "#25203a"; c.fillRect(avatarX, avatarY, avatarSide, avatarSide);
+      }
+    } else {
+      c.fillStyle = "#262039"; c.fillRect(avatarX, avatarY, avatarSide, avatarSide);
     }
-    const originY = 255;
-    const rows = [
-      ["BOUGHT", String(row.bought)], ["SOLD", String(row.sold)],
-      ["HOLD", row.held === null ? "—" : String(row.held)],
-    ];
-    // One monospaced, single-colour baseline, with exactly one space before USD.
-    const mainValue = profit === null ? "—" : fmt(profit, "ETH") + " ETH";
-    const usdText = pairedValue === null ? "" : " (" +
+    c.textAlign = "left";
+    c.fillStyle = "#f9f5ff";
+    c.font = "bold 43px " + family;
+    c.fillText(shortName(row.name, 25), 175, 168, 665);
+    const chainName = row.chain.toUpperCase();
+    try {
+      c.drawImage(await loadCanvasImage(scanChainById(row.chain).icon), 176, 187, 22, 22);
+    } catch { /* Chain text remains readable when the image fails. */ }
+    c.fillStyle = "#64cfff"; c.font = "bold 21px Arial";
+    c.fillText(chainName, 205, 205);
+
+    const divider = (y: number) => {
+      c.strokeStyle = "#443350"; c.lineWidth = 2; c.beginPath();
+      c.moveTo(54, y); c.lineTo(w - 54, y); c.stroke();
+    };
+    const metricRow = (label: string, value: string, y: number, color = "#f7f2ff", usd: number | null = null) => {
+      c.textAlign = "left"; c.font = "600 25px " + family;
+      c.fillStyle = "#ada2bd"; c.fillText(label, 55, y, 400);
+      const dollars = usd === null ? "" : " (" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")";
+      c.textAlign = "right"; c.fillStyle = color; c.font = "bold 29px " + fonts.plex;
+      c.fillText(value + dollars, w - 55, y, 475);
+      c.textAlign = "left";
+    };
+    const totalUsd = (amount: number | null) => amount === null || quote === null ? null : amount * quote;
+    const totalEth = (amount: number | null) => amount === null ? "—" : amount.toFixed(4);
+    const pnlColor = profit === null ? "#bfb3d1" : profit < 0 ? "#ff8296" : "#35e1aa";
+    const mainPnl = profit === null ? "—" : fmt(profit, "ETH") + " ETH";
+    const secondary = pairedValue === null ? "" : " (" +
       (pairedValue < 0 ? "-$" : "$") +
       Math.abs(pairedValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ")";
-    c.textAlign = "left";
-    c.fillStyle = profit === null ? "#c1b4d5" : profit < 0 ? "#ff8192" : "#33dea1";
-    c.font = "bold 63px " + fonts.plex;
-    c.fillText(mainValue + usdText, 85, originY + 44, w - 170);
-    c.strokeStyle = "#4f3a64"; c.beginPath(); c.moveTo(85, originY + 102);
-    c.lineTo(w - 85, originY + 102); c.stroke();
-    let y = originY + 153;
-    function textRow(label: string, value: string, usd: number | null = null, accent = "#f4ecff") {
-      c.textAlign = "left"; c.fillStyle = "#aca0bc"; c.font = "600 22px " + fontFamily;
-      c.fillText(label, 88, y, 510);
-      const usdText = usd === null ? "" :
-        " (" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")";
-      // One right-aligned text run: same font and colour, no artificially wide USD column.
-      c.textAlign = "right"; c.fillStyle = accent; c.font = "bold 27px " + fonts.plex;
-      c.fillText(value + usdText, w - 88, y, 510);
-      c.textAlign = "left"; y += 46;
-    }
-    for (const [label, value] of rows) textRow(label, value);
+    const printPnl = (y: number, maxWidth: number) => {
+      c.fillStyle = pnlColor;
+      c.textAlign = "left";
+      c.font = "bold 50px " + fonts.plex;
+      c.fillText(mainPnl + secondary, 55, y, maxWidth);
+    };
+
+    divider(258);
     if (mode === "complete") {
-      textRow("MINTED", String(row.minted));
-      textRow("TRANSFER IN", String(row.transfersIn));
-      // Detail figures always retain native ETH on the left and live USD on the right,
-      // even when the headline currency toggle switches to USD.
-      const metric = (amount: number | null) => amount === null ? "—" : amount.toFixed(4);
-      const convertUsd = (amount: number | null) => amount === null || quote === null ? null : amount * quote;
-      textRow("AVG BUY", metric(metrics.avgBuy), convertUsd(metrics.avgBuy));
-      textRow("AVG SALE", metric(metrics.avgSale), convertUsd(metrics.avgSale));
-      textRow("TOTAL INVESTED", metric(metrics.invested), convertUsd(metrics.invested));
-      textRow("TOTAL SALES", metric(metrics.sales), convertUsd(metrics.sales));
-      textRow("MATCHED ROI", metrics.roi === null ? "—" : (metrics.roi > 0 ? "+" : "") + metrics.roi.toFixed(2) + "%",
-        null, metrics.roi !== null && metrics.roi < 0 ? "#ff8192" : "#3bdda5");
+      metricRow("MINTED", String(row.minted), 320);
+      metricRow("BOUGHT", String(row.bought), 376);
+      metricRow("SOLD", String(row.sold), 432);
+      metricRow("HOLD", row.held === null ? "—" : String(row.held), 488);
+      metricRow("TRANSFER IN", String(row.transfersIn), 544);
+      divider(570);
+      metricRow("AVG BUY", totalEth(metrics.avgBuy), 636, "#ff8296", totalUsd(metrics.avgBuy));
+      metricRow("AVG SALE", totalEth(metrics.avgSale), 696, "#38dcb0", totalUsd(metrics.avgSale));
+      divider(726);
+      metricRow("TOTAL INVESTED", totalEth(metrics.invested), 791, "#f7f2ff", totalUsd(metrics.invested));
+      metricRow("TOTAL SALES", totalEth(metrics.sales), 854, "#f7f2ff", totalUsd(metrics.sales));
+      divider(886);
+      c.fillStyle = "#ada2bd"; c.font = "500 25px " + family;
+      c.fillText("REALIZED PROFIT", 55, 942);
+      c.font = "bold 30px " + fonts.plex; c.fillStyle = pnlColor;
+      const roiText = metrics.roi === null ? "ROI —" :
+        (metrics.roi > 0 ? "+" : "") + metrics.roi.toFixed(2) + "%";
+      c.fillText(roiText, 55, 994);
+      printPnl(1064, w - 110);
+    } else {
+      metricRow("BOUGHT", String(row.bought), 325);
+      metricRow("SOLD", String(row.sold), 385);
+      metricRow("HOLD", row.held === null ? "—" : String(row.held), 445);
+      divider(480);
+      c.fillStyle = "#ada2bd"; c.font = "500 25px " + family;
+      c.fillText("REALIZED PROFIT", 55, 531);
+      printPnl(601, w - 110);
     }
-    // Wallet identity belongs in the footer. Alias is optional, wallet address always visible.
-    const aliasY = h - 108;
+
+    // Optional nickname sits above wallet identifier; footer scales with Fit image.
     if (aliasText) {
-      c.fillStyle = "#e0cdf7"; c.font = "bold " + aliasSize + "px " + fontFamily;
-      c.fillText("@" + aliasText.replace(/^@/, ""), 87, aliasY, w - 170);
+      c.fillStyle = "#d9c0ed"; c.font = "bold " + aliasSize + "px " + family;
+      c.fillText("@" + aliasText.replace(/^@/, ""), 54, h - 94, w - 108);
     }
-    c.font = "19px " + fonts.plex; c.fillStyle = "#aaa0ba";
-    c.fillText(walletLabel, 87, h - 70, w - 175);
-    if (id !== renderSerial.current) return false;
+    c.font = "20px " + fonts.plex; c.fillStyle = "#a89eb9";
+    c.fillText(walletLabel, 54, h - 52, w - 108);
+
+    if (renderId !== renderSerial.current) return false;
     target.width = w; target.height = h;
-    const output = target.getContext("2d");
-    if (!output) throw new Error("Preview canvas unavailable");
-    output.drawImage(buffer, 0, 0);
+    const resultContext = target.getContext("2d");
+    if (!resultContext) throw new Error("Card preview unavailable");
+    resultContext.drawImage(buffer, 0, 0);
     return true;
   }
   useEffect(() => {

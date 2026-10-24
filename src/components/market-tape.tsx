@@ -56,7 +56,6 @@ export function MarketTape() {
   }
 
   return <div className="market-tape" aria-label="Cryptocurrency market prices">
-    <div className="tape-label"><span className="tape-live-dot"/> MARKET <span>24H</span></div>
     <div className="tape-window">
       <div className="tape-track">
         <div className="tape-set">{assets.map((asset, i) => <Cell key={marketSymbols[i]} asset={asset} symbol={marketSymbols[i]}/>)}</div>

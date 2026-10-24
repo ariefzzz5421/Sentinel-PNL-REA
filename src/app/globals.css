@@ -2021,3 +2021,90 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .studio-controls { display:flex; }
   .studio-controls .studio-x { width:100%;flex:1; }
 }
+
+
+/* Compact mobile redesign: full-width market ticker, slim wallet scanner, phone-first cards */
+.market-tape { min-height:38px; margin-top:7px; border-radius:10px; }
+.market-tape .tape-window { width:100%; flex:1 1 100%; mask-image:linear-gradient(90deg,transparent,#000 2.5%,#000 97.5%,transparent); }
+.market-tape .tape-set { min-height:37px; }
+.market-tape .tape-asset { padding:0 17px 0 9px; gap:7px; }
+.scan-collection-card .scan-collection-title { min-width:0; }
+.scan-collection-card .scan-collection-title strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+@media(min-width:601px) and (max-width:900px) {
+  .scanner-layout { width:min(100% - 36px,740px); }
+  .scanner-intro { padding:33px 12px 24px; }
+  .scanner-form { padding:18px; }
+}
+@media(max-width:600px) {
+  .scanner-page { overflow-x:clip; width:100%; }
+  .scanner-header { height:56px; min-height:56px; padding:0 12px; gap:8px; }
+  .scanner-brand { gap:5px; }
+  .scanner-brand img { width:29px; height:29px; }
+  .scanner-header-actions .wallet-connect-button { font-size:11px; min-height:39px; padding:8px 12px; border-radius:11px; }
+  .scanner-header-actions .wallet-signout { min-height:38px; }
+  .scanner-layout { width:calc(100% - 24px); max-width:470px; margin:0 auto; gap:0; }
+  .scanner-main { min-width:0; }
+  .scanner-chains { min-height:48px; margin-top:8px; padding:4px 6px; gap:4px; border-radius:12px; width:100%; max-width:100%; scroll-padding-inline:6px; }
+  .scanner-chains button { min-height:38px !important; padding:7px 10px !important; gap:6px !important; font-size:12px; border-radius:9px; font-weight:650; }
+  .scanner-chains button img { height:19px; width:19px; flex-basis:19px; }
+  .market-tape { min-height:36px; margin-top:7px; border-radius:10px; }
+  .market-tape .tape-set { min-height:35px; }
+  .market-tape .tape-asset { gap:6px; padding:0 14px 0 5px; }
+  .market-tape .tape-icon { width:18px; height:18px; }
+  .market-tape .tape-asset strong,.market-tape .tape-price,.market-tape .tape-change { font-size:10px; }
+  .scanner-intro { padding:19px 4px 19px; }
+  .scanner-kicker { padding:5px 10px; font-size:10px; gap:6px; }
+  .scanner-intro h1 { font-size:clamp(27px,7.3vw,34px); line-height:1.1; margin-top:15px; margin-bottom:10px; letter-spacing:-.045em; }
+  .scanner-intro p { font-size:13px; line-height:1.45; max-width:355px; margin-inline:auto; }
+  .scanner-form { padding:12px; border-radius:17px; box-shadow:0 12px 25px #03031039; }
+  .scanner-primary-row { grid-template-columns:1fr; gap:9px; }
+  .scanner-wallet-field textarea { display:block; min-height:50px; height:52px; max-height:110px; padding:13px 64px 10px 13px; line-height:1.35; font-size:14px; border-radius:11px; }
+  .scanner-wallet-field textarea::placeholder { font-size:13px; }
+  .scanner-file { bottom:7px; right:7px; padding:7px 9px; }
+  .scanner-submit { min-height:48px; height:48px; font-size:16px; border-radius:11px; }
+  .scanner-contract { height:46px; min-height:46px; margin-top:9px; font-size:12px; padding:0 12px; border-radius:11px; }
+  .scanner-secondary-row { margin-top:9px; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .scanner-secondary-row button { min-height:43px; padding:8px 6px; font-size:12px; border-radius:10px; }
+  .scanner-empty { margin:29px 0 25px; gap:5px; }
+  .scanner-empty svg { width:25px; height:25px; }
+  .scanner-empty strong,.scanner-empty span { font-size:12px; }
+  .scanner-inline-status { margin:12px auto 0; font-size:11px; line-height:1.4; }
+  .scan-results, .scanner-inline-status+.scan-results { margin:12px auto 30px; }
+  .scan-result-tabs { gap:6px; margin-bottom:11px; }
+  .scan-result-tabs button { padding:8px 12px; font-size:11px; min-height:37px; }
+  .scan-result-tabs .scan-results-export { margin-left:auto; }
+  .scan-result-total { font-size:10px; }
+  .scan-results-grid { gap:10px; }
+  .scan-collection-card { padding:12px; border-radius:14px; }
+  .scan-collection-heading { gap:8px; align-items:center; }
+  .scan-collection-image { height:48px; width:48px; min-width:48px; border-radius:10px; }
+  .scan-collection-title strong { font-size:14px; }
+  .scan-collection-title span { font-size:10px; }
+  .scan-collection-pnl { min-width:84px; }
+  .scan-collection-pnl strong { font-size:17px; }
+  .scan-collection-pnl small { font-size:9px; }
+  .scan-collection-stats { padding-top:11px; margin-top:12px; }
+  .scan-collection-stats strong { font-size:18px; }
+  .scan-card-share { padding-top:10px; margin-top:10px; }
+  .scan-modal-backdrop { padding:6px; align-items:center; }
+  .studio-modal { max-height:calc(100dvh - 12px); border-radius:16px; padding:12px; padding-bottom:max(12px,env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch; }
+  .scan-modal-head { margin-bottom:10px; }
+  .scan-modal-head h2 { font-size:20px; margin-top:4px; }
+  .scan-modal-close { width:34px; height:34px; }
+  .studio-back { min-height:39px; padding:9px; }
+  .studio-choice-bar { margin:10px 0; gap:9px; }
+  .studio-segment button { padding:9px 13px; font-size:12px; }
+  .studio-controls .studio-x { min-height:39px; }
+  .studio-download { min-height:43px; margin-bottom:10px; padding:9px; font-size:14px; }
+  .studio-rendered { border-radius:10px; }
+  .studio-export-actions button { min-height:43px; margin:9px 0 12px; padding:9px; }
+  .studio-custom { margin:12px 0 8px; padding:12px; border-radius:12px; }
+  .studio-custom>summary { font-size:14px; }
+  .studio-fields { gap:12px; padding-top:14px; }
+}
+@media(max-width:360px){
+  .scanner-layout { width:calc(100% - 18px); }
+  .scanner-chains button { padding-inline:8px !important; }
+  .scanner-intro h1 { font-size:27px; }
+  .scan-collection-title strong { font-size:13px; }
+}
