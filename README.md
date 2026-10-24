@@ -98,3 +98,14 @@ Tap any NFT collection and choose `Complete` or `Simple`. The preview and downlo
 Network selector uses compact `ETH, Base, ARB, RH, ARC` labels. RH allows ETH-based OpenSea sales with the official wrapped ETH contract; ARC is selectable but the existing ETH-ledger is **not** used for Arc's USDC-native PnL, which would otherwise produce incorrect ETH metrics. An Arc scan returns an informative unsupported-calculation message until a USDC-native accounting engine is implemented.
 
 Supporting evidence: https://docs.opensea.io/reference/get_chains, https://docs.opensea.io/reference/list_events_by_account, https://opensea.io/blog/articles/robinhood-chain-is-live-on-opensea, https://opensea.io/blog/articles/arc-is-live-on-opensea.
+
+
+## Typography, live market tape, and USD beside NFT PnL
+
+Typography defaults: Space Grotesk for headings, Satoshi for interactive interface text (loaded from Fontshare with Inter fallback), IBM Plex Mono for all data and PnL metrics. Optional card headline fonts include Oswald and Orbitron. Font files are loaded by the app, not committed as redistributed files.
+
+The home scanner now includes a compact, animated market tape: BTC, ETH, BNB, HYPE with **USD spot price, 24h percent change and provider logo image**. Data comes from the CoinGecko `/coins/markets` endpoint through `/api/market/ticker`, cached 90 seconds server-side and polled every 90 seconds by active browser clients. API key is **optional** for best-effort public use: `COINGECKO_DEMO_API_KEY`, configured only as a server-side Vercel env var, can improve free-tier quota. When quotes are unavailable, the UI explicitly says so; it never inserts fake or persisted market prices. Logos are returned directly by CoinGecko metadata, with unbranded letter placeholders if absent. CoinGecko credit appears on the tape.
+
+The NFT card studio shares the exact same ETH quote from `/api/market/eth-usd`, renders the estimated ETH PnL alongside approximate current USD conversion (e.g. `+0.0040 ETH ≈ $8.00` when ETH is $2,000), and shows a provider timestamp. This **is not historical trade USD PnL**. USD is omitted if the live quote is offline or stale (>10 min). Fonts, alias, background, size and Complete/Simple controls redraw the preview; PNG export renders again from those same selected settings. Share on X only supplies text; images must be attached manually.
+
+Useful data references: https://docs.coingecko.com/reference/coins-markets, https://support.coingecko.com/articles/4315804955-can-i-use-coingecko-data-and-screenshots-for-my-website-book-etc.
