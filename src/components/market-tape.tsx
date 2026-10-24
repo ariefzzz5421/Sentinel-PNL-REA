@@ -9,6 +9,7 @@ const coinLinks: Record<MarketSymbol, string> = {
   BTC: "https://www.coingecko.com/en/coins/bitcoin",
   ETH: "https://www.coingecko.com/en/coins/ethereum",
   BNB: "https://www.coingecko.com/en/coins/bnb",
+  SOL: "https://www.coingecko.com/en/coins/solana",
   HYPE: "https://www.coingecko.com/en/coins/hyperliquid",
 };
 function money(value: number) {
@@ -42,10 +43,11 @@ export function MarketTape() {
 
   function Cell({ asset, symbol }: { asset: MarketAsset | null; symbol: MarketSymbol }) {
     const change = asset?.change24h;
+    const iconSrc = symbol === "SOL" ? "/chains/solana.svg" : asset?.image;
     return <a href={coinLinks[symbol]} target="_blank" rel="noopener noreferrer"
       className="tape-asset" aria-label={symbol + " market data from CoinGecko"}>
-      {asset?.image
-        ? <Image unoptimized src={asset.image} width={22} height={22} alt="" className="tape-icon"/>
+      {iconSrc
+        ? <Image unoptimized src={iconSrc} width={22} height={22} alt="" className="tape-icon"/>
         : <span className={"tape-icon tape-fallback coin-" + symbol.toLowerCase()}>{symbol.slice(0, 1)}</span>}
       <strong>{symbol}</strong>
       <span className="tape-price">{asset ? money(asset.usd) : "—"}</span>
