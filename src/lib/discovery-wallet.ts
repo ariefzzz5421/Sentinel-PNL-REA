@@ -26,7 +26,10 @@ export function isBitcoinAddress(address: string): boolean {
 }
 export function detectNonEvmWallet(input: string): "solana" | "bitcoin" | null {
   const address = input.trim();
-  if (isBitcoinAddress(address)) return "bitcoin";
+  // Bech32 cannot be Solana; legacy Bitcoin and Solana can both begin with '1'.
+  // Decode exact 32-byte Solana keys before accepting looser legacy BTC syntax.
+  if (/^bc1/i.test(address) && isBitcoinAddress(address)) return "bitcoin";
   if (isSolanaAddress(address)) return "solana";
+  if (isBitcoinAddress(address)) return "bitcoin";
   return null;
 }
