@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isBitcoinAddress, isSolanaAddress, type DiscoveryChain } from "./discovery-wallet";
 import { addressSchema } from "./schema";
+import { getMatchedSolPnl, type MatchedSolPnl } from "./solana-pnl";
 
 export type DiscoveryAsset = {
   id: string; name: string; imageUrl: string | null; url: string;
@@ -10,7 +11,8 @@ export type DiscoveryAsset = {
 export type DiscoveryResult = {
   chain: DiscoveryChain; address: string; assets: DiscoveryAsset[];
   partial: boolean; mode: "holdings" | "recent-transfers";
-  note: string; pnlAvailable: false;
+  note: string; pnlAvailable: boolean;
+  matchedPnl?: MatchedSolPnl;
 };
 export class DiscoveryError extends Error {
   constructor(message: string, public status = 502) { super(message); }
@@ -72,7 +74,9 @@ async function helius(input: Input, fetcher: typeof fetch): Promise<DiscoveryRes
       if (!a || typeof a.id !== "string" || !isSolanaAddress(a.id)) continue;
       const iface = a.interface;
       // Fungible assets must never masquerade as NFTs in a PnL tracker.
-      if (typeof iface !== "string" || !["V1_NFT", "ProgrammableNFT", "MplCoreAsset", "MplCoreCollection", "CompressedNFT", "NFT"].includes(iface)) continue;
+      if (typeof iface !== "string" || !["V1_NFT", "ProgrammableNFT", "MplCoreAsset", "NFT"].includes(iface)) continue;
+      // Exclude compressed NFTs even if a provider reports them using an NFT interface.
+      if (obj(a.compression)?.compressed === true) continue;
       const content = obj(a.content);
       const metadata = obj(content?.metadata);
       const links = obj(content?.links);
@@ -91,11 +95,15 @@ async function helius(input: Input, fetcher: typeof fetch): Promise<DiscoveryRes
     if (result.items.length < 100) break;
     if (page === 2) partial = true;
   }
+  // Enhanced history access varies by Helius plan. Never fail holdings when unavailable.
+  const matchedPnl = await getMatchedSolPnl(input.address, key, fetcher);
   return {
     chain: "solana", address: input.address, assets: [...assets.values()],
-    partial, mode: "holdings", pnlAvailable: false,
-    note: "Helius DAS confirms current NFT ownership, not historical purchase prices. SOL PnL is not calculated. Some compressed/core assets may lack images." +
-      (partial ? " Only the first 200 assets were read." : ""),
+    partial, mode: "holdings", pnlAvailable: Boolean(matchedPnl),
+    matchedPnl: matchedPnl || undefined,
+    note: matchedPnl
+      ? "Matched trades only: gross SOL difference on verified single-NFT buy/sell pairs. Partial history; excludes marketplace/gas fees and unpaired sales."
+      : "No verifiable matched SOL buy/sell pairs in the available Helius history. Historical NFT PnL is unavailable.",
   };
 }
 
