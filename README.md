@@ -156,3 +156,10 @@ The chain selector displays `ETH · Base · ARB · RH · ARC · SOL · INK`. Off
 **Network UI does not imply scan coverage.** Solana uses a non-EVM address model and is not supported by the current EVM NFT scanner. Ink is an EVM L2 (mainnet chain ID 57073, gas ETH) but has no verified indexed NFT sale/mint adapter in this app. SOL and INK tabs provide accurate explanatory status upon selection/scan; neither fabricates PnL or submits malformed data to the existing EVM API. Arc remains visible with its existing USDC accounting limitation.
 
 The market tape now includes SOL alongside BTC, ETH, BNB, and HYPE from one CoinGecko `/coins/markets` query. It shows real provider USD spot quotes and 24h changes, cached server-side for 90 seconds. The SOL ticker uses the official local Solana Foundation logo. When a quote is absent, the UI displays a dash—not a made-up price. All existing assets continue to use CoinGecko-provided images when available.
+
+
+### Card artwork polish
+
+The PnL PNG renderer now places the Sentinel brand icon in the **upper-right** corner (54×54 pixels on the native 900px Canvas), and increases the collection art cover-cropped thumbnail to **126×126** with rounded corners while retaining room for the title and the first divider. The mobile result list also receives slightly larger 56px collection previews (50px at ≤360px). Generated PNG and in-app preview are drawn with the same renderer.
+
+**Note on SOL / INK:** The chain selector and SOL ticker were introduced previously in PR #13. No duplicate fetches or unsupported NFT scanner adapters are added in this styling PR. The GitHub `main` branch already contains `/chains/solana.svg` and `/chains/ink.svg`, the chain labels, and SOL CoinGecko prices. If they do not appear in the live site, check whether Vercel production has deployed the current `main` commit.

@@ -2173,3 +2173,21 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
 @media(max-width:600px){
   .personal-dashboard .personal-trade-value strong { font-size:11px; }
 }
+
+
+/* NFT previews: a touch larger on phones without squeezing the PnL or labels. */
+@media (max-width:600px) {
+  .scan-results-grid .scan-collection-image {
+    width:56px;
+    height:56px;
+    min-width:56px;
+    border-radius:12px;
+  }
+  .scan-results-grid .scan-collection-heading { gap:10px; }
+  .scan-results-grid .scan-collection-title { flex:1 1 0; min-width:0; }
+  .scan-results-grid .scan-collection-title strong { text-overflow:ellipsis; white-space:nowrap; overflow:hidden; }
+}
+@media (max-width:360px) {
+  .scan-results-grid .scan-collection-image { width:50px; height:50px; min-width:50px; border-radius:10px; }
+  .scan-results-grid .scan-collection-heading { gap:8px; }
+}
