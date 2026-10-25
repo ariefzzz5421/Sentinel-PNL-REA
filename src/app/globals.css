@@ -2191,3 +2191,26 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .scan-results-grid .scan-collection-image { width:50px; height:50px; min-width:50px; border-radius:10px; }
   .scan-results-grid .scan-collection-heading { gap:8px; }
 }
+
+
+/* Read-only SOL, Ink, and Bitcoin NFT discovery; never styled as proven PnL. */
+.discovery-results{margin:15px 0 34px;border:1px solid #4b395e;background:#141122d9;border-radius:17px;padding:17px;color:#f1eafa}
+.discovery-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+.discovery-eyebrow{display:block;font-size:10px;letter-spacing:.13em;color:#b391ed;font-weight:800}
+.discovery-heading h2{font-size:21px;font-weight:720;margin-top:5px}
+.discovery-counter{font-size:12px;color:#9d92b3;white-space:nowrap}
+.discovery-caveat{display:flex;gap:9px;align-items:flex-start;padding:11px 12px;border:1px solid #504269;background:#20192e;border-radius:11px;margin-bottom:13px;color:#c7b9d6;font-size:12px;line-height:1.5}
+.discovery-caveat svg{flex:none;color:#c3a4f6;margin-top:1px}
+.discovery-caveat strong{color:#ebe0ff}
+.discovery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:9px}
+.discovery-card{display:flex;align-items:center;gap:12px;min-width:0;border:1px solid #413450;border-radius:11px;padding:10px;background:#1d1729;transition:border-color .2s}
+.discovery-card:hover{border-color:#9370ca}
+.discovery-artwork{display:flex;align-items:center;justify-content:center;background:#26203a;border-radius:10px;width:64px;height:64px;min-width:64px;overflow:hidden;color:#a492c1}
+.discovery-artwork img{display:block;width:100%;height:100%;object-fit:cover}
+.discovery-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.discovery-copy strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.discovery-copy small{font-size:10px;color:#a99dbb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.discovery-kind{color:#51dcb7;font-size:10px;font-weight:750}
+.discovery-card>svg{color:#b2a4c2;flex:none}
+.discovery-empty{border:1px dashed #5d4a72;padding:22px;border-radius:11px;color:#b1a3c7;font-size:12px;line-height:1.6}
+@media(max-width:600px){.discovery-results{padding:12px;border-radius:14px}.discovery-heading h2{font-size:17px}.discovery-grid{grid-template-columns:1fr}.discovery-card{padding:9px}.discovery-artwork{width:52px;height:52px;min-width:52px}.discovery-caveat{font-size:11px}}

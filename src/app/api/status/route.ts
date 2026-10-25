@@ -7,6 +7,11 @@ export async function GET() {
   return NextResponse.json({
     walletConnection: { configured: Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID), provider: "Privy" },
     nftScanning: { configured: Boolean(process.env.OPENSEA_API_KEY), provider: "OpenSea", needs: process.env.OPENSEA_API_KEY ? [] : ["OPENSEA_API_KEY"] },
+    discovery: {
+      solana: { configured: Boolean(process.env.HELIUS_API_KEY), scope: "current NFT holdings only", pnlReady: false },
+      bitcoin: { configured: Boolean(process.env.ORDISCAN_API_KEY), scope: "owned inscriptions for one Bitcoin address", pnlReady: false },
+      ink: { configured: Boolean(process.env.INK_RPC_URL), scope: "recent ERC-721 transfers for a specified contract", pnlReady: false },
+    },
     ens: { dedicatedRpcConfigured: Boolean(process.env.ENS_RPC_URL), fallback: "Public Ethereum RPC; OpenSea resolution when configured" },
     limitations: ["ETH/WETH ERC-721 sales plus partially indexed mint and incoming transfer events", "Historical gas and unsupported token payment prices are excluded", "No complete-history guarantee"],
   }, { headers: { "Cache-Control": "no-store" } });

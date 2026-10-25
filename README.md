@@ -163,3 +163,28 @@ The market tape now includes SOL alongside BTC, ETH, BNB, and HYPE from one Coin
 The PnL PNG renderer now places the Sentinel brand icon in the **upper-right** corner (54×54 pixels on the native 900px Canvas), and increases the collection art cover-cropped thumbnail to **126×126** with rounded corners while retaining room for the title and the first divider. The mobile result list also receives slightly larger 56px collection previews (50px at ≤360px). Generated PNG and in-app preview are drawn with the same renderer.
 
 **Note on SOL / INK:** The chain selector and SOL ticker were introduced previously in PR #13. No duplicate fetches or unsupported NFT scanner adapters are added in this styling PR. The GitHub `main` branch already contains `/chains/solana.svg` and `/chains/ink.svg`, the chain labels, and SOL CoinGecko prices. If they do not appear in the live site, check whether Vercel production has deployed the current `main` commit.
+
+
+## Non-EVM NFT Discovery (Helius · Ink · Ordiscan)
+
+The existing ETH/WETH EVM realized PnL scanner remains unchanged. NFT Discovery is a **separate read-only feature** that never combines Solana SOL, Bitcoin BTC or unpriced Ink transfers into ETH PnL. Results explicitly say **PnL not yet available**.
+
+Required **server-only** Vercel environment variables, for the relevant Production / Preview targets:
+
+| Key | Usage | Limits |
+|---|---|---|
+| HELIUS_API_KEY | Solana DAS getAssetsByOwner | Current NFT holdings; maximum 2 × 100 per scan |
+| ORDISCAN_API_KEY | Ordiscan address inscriptions | Bitcoin inscriptions currently held by one address; maximum 2 × 100 |
+| INK_RPC_URL | Ink Mainnet eth_chainId, eth_blockNumber, eth_getLogs | Specific ERC-721 contract only; latest 1,000 blocks |
+
+The keys stay on server. The public /api/status endpoint reveals booleans, never secrets. Redeploy Vercel after adding env variables.
+
+Usage:
+1. Paste EVM wallet, select INK and enter a collection contract, then Scan. This shows recent inbound/outbound ERC-721 Transfer logs, not complete holdings or sales.
+2. Paste 32-byte base58 Solana address and hit Scan; it auto-selects SOL, queries Helius DAS, and shows owned NFTs.
+3. Paste bc1… / 1… / 3… Bitcoin mainnet address and hit Scan; it auto-selects BTC and queries Ordiscan inscriptions. Address syntax is checked, but the provider confirms actual ownership.
+4. SOL / BTC have no contract-filtered scan or Bot PnL. Results are bounded with explicit incomplete-data explanations.
+
+**Not supported yet:** historical SOL NFT buy/sell prices, complete Bitcoin Ordinals marketplace prices, Ink historical backfills, complex/ERC-1155 mint costs, cross-native-currency realized PnL. An API key does not establish a historical cost basis; indexed marketplace data and a multi-currency accounting engine are required.
+
+API docs: https://www.helius.dev/docs/das-api · https://ordiscan.com/docs/api · https://docs.inkonchain.com/tools/rpc .
