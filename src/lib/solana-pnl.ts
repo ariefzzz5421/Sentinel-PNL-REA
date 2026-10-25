@@ -18,8 +18,7 @@ function object(v: unknown): Record<string, unknown> | null {
 function parsedSale(value: unknown, wallet: string): Sale | null {
   const t = object(value);
   if (!t || t.type !== "NFT_SALE" || typeof t.signature !== "string" ||
-    typeof t.timestamp !== "number" || !Number.isFinite(t.timestamp) ||
-    !Array.isArray(object(t.events)?.nft ? [object(t.events)?.nft] : [])) return null;
+    typeof t.timestamp !== "number" || !Number.isFinite(t.timestamp)) return null;
   const nft = object(object(t.events)?.nft);
   if (!nft || typeof nft.buyer !== "string" || typeof nft.seller !== "string" ||
     (nft.buyer !== wallet && nft.seller !== wallet)) return null;
