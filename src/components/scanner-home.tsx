@@ -52,7 +52,7 @@ export function ScannerHome() {
     setResultAddress(null);
     setResultWarning("");
     const pasted = wallets.trim();
-    const detected = mode === "wallet" && !/[\\s,;]/.test(pasted) ? detectNonEvmWallet(pasted) : null;
+    const detected = mode === "wallet" && !/[\s,;]/.test(pasted) ? detectNonEvmWallet(pasted) : null;
     const target: ScanChain = detected || chain;
     if (detected && target !== chain) setChain(target);
     const selected = scanChainById(target);
@@ -64,7 +64,7 @@ export function ScannerHome() {
       if (mode === "bot") {
         setMessage("Bot PnL is not yet available for Ink."); setError(true); return;
       }
-      if (pasted.split(/[\\s,;]+/).filter(Boolean).length !== 1) {
+      if (pasted.split(/[\s,;]+/).filter(Boolean).length !== 1) {
         setMessage("NFT Discovery accepts one public wallet address at a time."); setError(true); return;
       }
       setBusy(true); setError(false); setMessage("Reading public NFT data from " + target + "…");
@@ -96,7 +96,7 @@ export function ScannerHome() {
       if (mode !== "wallet" && !addressSchema.safeParse(contract).success)
         throw new Error("Enter a valid collection contract address.");
     } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Invalid wallet."); setError(true); setBusy(false); return; }
-    setMessage(`${resolutionNote} Scanning ${addresses.length} wallet(s) on ${chain}…`.trim());
+    setMessage(`${resolutionNote} Scanning ${addresses.length} wallet(s) on ${target}…`.trim());
     try {
       const gathered: TradeEvent[] = [];
       const warnings: string[] = [];
