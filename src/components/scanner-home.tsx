@@ -77,7 +77,7 @@ export function ScannerHome() {
         if (!response.ok) throw new Error(data.error || "NFT discovery failed.");
         if (!Array.isArray(data.assets) || data.pnlAvailable !== false) throw new Error("Unexpected provider response.");
         setDiscovery(data);
-        setMessage(data.assets.length + " public NFT item(s) found · PnL requires verified trade prices.");
+        setMessage("Scan completed.");
       } catch (cause) {
         setMessage(cause instanceof Error ? cause.message : "NFT discovery failed."); setError(true);
       } finally { setBusy(false); }
@@ -167,7 +167,7 @@ export function ScannerHome() {
           {scanChains.map((item) => <button key={item.id} type="button" onClick={() => { setChain(item.id); setMessage(item.scanReady ? "" : item.unavailableReason); setError(false); setResultEvents(null); setDiscovery(null); }} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : item.unavailableReason}><Image src={item.icon} width={19} height={19} alt=""/>{item.label}</button>)}
         </div>
         <MarketTape/>
-        <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
+        <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> SENTINEL ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
           <p>Analyze NFT trades and realized PnL across supported chains.</p>
         </div>
@@ -186,7 +186,7 @@ export function ScannerHome() {
             <button type="button" className="scanner-bot-btn" disabled={busy} onClick={() => void scan("bot")}>Bot PNL</button>
           </div>
         </section>
-        {message && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
+        {message && (!discovery || error) && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
           {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " NFT activity events. Tap any collection to view or share its PnL."}
         </p>}
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
