@@ -36,10 +36,10 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
       </div>
       <span className="discovery-counter">{result.assets.length} {result.mode === "holdings" ? "items" : "events"}</span>
     </div>
-    {gain && pnl !== null && Number.isFinite(pnl) ? <div className="discovery-matched-pnl">
+    {result.chain === "solana" ? <div className="discovery-matched-pnl">
       <span>Matched gross SOL PnL</span>
-      <strong className={pnl < 0 ? "negative" : "positive"}>{pnl > 0 ? "+" : ""}{gain.grossSol} SOL</strong>
-      <small>{gain.matchedSales} matched sale{gain.matchedSales === 1 ? "" : "s"} · partial history · before fees</small>
+      <strong className={pnl !== null && pnl < 0 ? "negative" : "positive"}>{gain && pnl !== null && Number.isFinite(pnl) ? (pnl > 0 ? "+" : "") + gain.grossSol + " SOL" : "— SOL"}</strong>
+      <small>{gain ? `${gain.matchedSales} matched sales · partial history · before fees` : "No verified buy–sell matches found in available history"}</small>
     </div> : null}
     <div className="discovery-grid">
       {result.assets.map((asset) => <AssetCard asset={asset} key={asset.id}/>)}
