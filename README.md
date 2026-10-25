@@ -188,3 +188,14 @@ Usage:
 **Not supported yet:** historical SOL NFT buy/sell prices, complete Bitcoin Ordinals marketplace prices, Ink historical backfills, complex/ERC-1155 mint costs, cross-native-currency realized PnL. An API key does not establish a historical cost basis; indexed marketplace data and a multi-currency accounting engine are required.
 
 API docs: https://www.helius.dev/docs/das-api · https://ordiscan.com/docs/api · https://docs.inkonchain.com/tools/rpc .
+
+
+### Public discovery UI & matched Solana gross PnL
+
+- Collection discovery no longer displays a large warning panel. Empty scans render **No NFT Trades Found** (the discovery backend actually queries current holdings, so an empty result does not prove absence of historical trades).
+- The home kicker is **SENTINEL ANALYSIS**.
+- Solana holdings explicitly exclude compressed NFT assets (both the CompressedNFT interface and compression flag). This does not verify legitimacy; a standard NFT can still be spam.
+- For supported non-compressed NFT marketplace `NFT_SALE` transactions, the Helius Enhanced Transactions API may return a seller, buyer, **lamports** price and a single NFT mint. The backend conservatively matches a purchase and a later sale of the *same mint* by one wallet within the latest 200 indexed transactions. It reports **matched gross SOL PnL before fees** only if one or more pairs have verifiable prices. Otherwise the UI shows **— SOL**, never a false zero. Unsupported sources, fee attribution, SOL-token swaps, bundles, mints, unpaired sales and complete historical coverage are excluded. Helius Enhanced API is a legacy service and access may be restricted by plan; the existing Helius holdings scanner remains functional when PnL history is inaccessible.
+- Taproot Wizards #0581 owner address listed publicly at https://ord.net/inscription/149814 is used as a **mocked unit-test fixture**, not a claim that its ownership or live API response is verified at deploy time. Bitcoin read-only discovery stays separate from PnL.
+
+To validate an address with real data, use the production site, a public wallet, and browser Network tab; do not paste private API keys or seed phrases.
