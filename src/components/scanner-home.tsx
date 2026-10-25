@@ -9,6 +9,9 @@ import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
 import { ScanResults, type PublicHolding } from "@/components/scan-results";
 import { MarketTape } from "@/components/market-tape";
+import { DiscoveryResults } from "@/components/discovery-results";
+import type { DiscoveryResult } from "@/lib/nft-discovery";
+import { detectNonEvmWallet } from "@/lib/discovery-wallet";
 
 const STORE = "sentinel-pnl-events-v1";
 export function ScannerHome() {
@@ -20,6 +23,7 @@ export function ScannerHome() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const [resultEvents, setResultEvents] = useState<TradeEvent[] | null>(null);
+  const [discovery, setDiscovery] = useState<DiscoveryResult | null>(null);
   const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
   const [holdingsComplete, setHoldingsComplete] = useState(false);
   const [resultAddress, setResultAddress] = useState<string | null>(null);
@@ -42,11 +46,43 @@ export function ScannerHome() {
     let addresses: string[];
     let resolutionNote = "";
     setResultEvents(null);
+    setDiscovery(null);
     setResultHoldings([]);
     setHoldingsComplete(false);
     setResultAddress(null);
     setResultWarning("");
-    const selected = scanChainById(chain);
+    const pasted = wallets.trim();
+    const detected = mode === "wallet" && !/[\\s,;]/.test(pasted) ? detectNonEvmWallet(pasted) : null;
+    const target: ScanChain = detected || chain;
+    if (detected && target !== chain) setChain(target);
+    const selected = scanChainById(target);
+    if ("discoveryReady" in selected && selected.discoveryReady) {
+      if (mode !== "wallet" && target !== "ink") {
+        setMessage("Contract-filtered or bot PnL is not yet supported on this network. Use Scan for holdings discovery.");
+        setError(true); return;
+      }
+      if (mode === "bot") {
+        setMessage("Bot PnL is not yet available for Ink."); setError(true); return;
+      }
+      if (pasted.split(/[\\s,;]+/).filter(Boolean).length !== 1) {
+        setMessage("NFT Discovery accepts one public wallet address at a time."); setError(true); return;
+      }
+      setBusy(true); setError(false); setMessage("Reading public NFT data from " + target + "…");
+      try {
+        const response = await fetch("/api/nft-discovery", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chain: target, address: pasted, contract: target === "ink" ? contract.trim() : undefined }),
+        });
+        const data = await response.json() as DiscoveryResult & { error?: string };
+        if (!response.ok) throw new Error(data.error || "NFT discovery failed.");
+        if (!Array.isArray(data.assets) || data.pnlAvailable !== false) throw new Error("Unexpected provider response.");
+        setDiscovery(data);
+        setMessage(data.assets.length + " public NFT item(s) found · PnL requires verified trade prices.");
+      } catch (cause) {
+        setMessage(cause instanceof Error ? cause.message : "NFT discovery failed."); setError(true);
+      } finally { setBusy(false); }
+      return;
+    }
     if (!selected.scanReady) {
       setMessage(selected.unavailableReason);
       setError(true);
@@ -54,7 +90,7 @@ export function ScannerHome() {
     }
     setBusy(true); setError(false); setMessage("Resolving wallet inputs…");
     try {
-      const resolved = await resolveWalletInput(wallets, chain);
+      const resolved = await resolveWalletInput(wallets, target);
       addresses = resolved.addresses;
       resolutionNote = resolved.description;
       if (mode !== "wallet" && !addressSchema.safeParse(contract).success)
@@ -70,7 +106,7 @@ export function ScannerHome() {
         const results = await Promise.all(addresses.slice(offset, offset + 4).map(async (address) => {
           const response = await fetch("/api/scan", {
             method: "POST", headers: { "content-type": "application/json" },
-            body: JSON.stringify({ address, chain: chain as Chain, mode, contract: mode === "wallet" ? undefined : contract.trim() }),
+            body: JSON.stringify({ address, chain: target as Chain, mode, contract: mode === "wallet" ? undefined : contract.trim() }),
           });
           const data: unknown = await response.json();
           if (!response.ok) throw new Error(data && typeof data === "object" && "error" in data ? String(data.error) : "Scan failed.");
@@ -128,7 +164,7 @@ export function ScannerHome() {
       </aside>
       <main className="scanner-main" id="scanner">
         <div className="scanner-chains" role="group" aria-label="Blockchain">
-          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => { setChain(item.id); setMessage(item.scanReady ? "" : item.unavailableReason); setError(false); setResultEvents(null); }} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : item.unavailableReason}><Image src={item.icon} width={19} height={19} alt=""/>{item.label}</button>)}
+          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => { setChain(item.id); setMessage(item.scanReady ? "" : item.unavailableReason); setError(false); setResultEvents(null); setDiscovery(null); }} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : item.unavailableReason}><Image src={item.icon} width={19} height={19} alt=""/>{item.label}</button>)}
         </div>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> NFT TRADE ANALYSIS</div>
@@ -138,13 +174,13 @@ export function ScannerHome() {
         <section className="scanner-form" aria-label="Wallet scanner">
           <div className="scanner-primary-row">
             <div className="scanner-wallet-field">
-              <textarea aria-label="Wallet addresses or ENS names" title="Paste up to 100 addresses or 20 ENS names, separated by lines, spaces, or commas." rows={2} value={wallets} onChange={(event) => setWallets(event.target.value)} placeholder="0x... or name.eth"/>
+              <textarea aria-label="Wallet addresses or ENS names" title="Paste up to 100 addresses or 20 ENS names, separated by lines, spaces, or commas." rows={2} value={wallets} onChange={(event) => setWallets(event.target.value)} placeholder="0x... · name.eth · Solana · bc1p..."/>
               <input ref={fileRef} className="visually-hidden" type="file" accept=".txt,text/plain" onChange={(event) => void loadWallets(event.target.files?.[0])}/>
               <button className="scanner-file" type="button" onClick={() => fileRef.current?.click()}><FileInput size={14}/> .txt</button>
             </div>
             <button className="scanner-submit" type="button" disabled={busy} onClick={() => void scan("wallet")}>{busy ? "Scanning…" : "Scan"}</button>
           </div>
-          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder="Collection contract address (required for Scan Contract & Bot PNL)"/>
+          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder={chain === "ink" ? "Ink ERC-721 contract required for recent transfers" : "Collection contract address (Scan Contract & Bot PNL)"}/>
           <div className="scanner-secondary-row">
             <button type="button" className="scanner-contract-btn" disabled={busy} onClick={() => void scan("contract")}>Scan Contract</button>
             <button type="button" className="scanner-bot-btn" disabled={busy} onClick={() => void scan("bot")}>Bot PNL</button>
@@ -153,7 +189,7 @@ export function ScannerHome() {
         {message && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
           {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " NFT activity events. Tap any collection to view or share its PnL."}
         </p>}
-        {resultEvents !== null
+        {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
           ? <ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
