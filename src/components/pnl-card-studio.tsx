@@ -168,35 +168,46 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     c.strokeStyle = "#594475"; c.lineWidth = 2;
     c.strokeRect(20, 20, w - 40, h - 40);
 
+    // Sentinel signature moves to the top-right; larger but clear of collection details.
+    const sentinelSize = 54;
+    const sentinelX = w - 50 - sentinelSize;
+    const sentinelY = 43;
     try {
-      c.drawImage(await loadCanvasImage("/sentinel-logo.svg"), 49, 43, 38, 38);
-    } catch { c.font = "bold 26px Arial"; c.fillStyle = "#ad85e8"; c.fillText("◈", 51, 72); }
+      c.drawImage(await loadCanvasImage("/sentinel-logo.svg"), sentinelX, sentinelY, sentinelSize, sentinelSize);
+    } catch {
+      c.textAlign = "right"; c.font = "bold 37px Arial"; c.fillStyle = "#ad85e8";
+      c.fillText("◈", w - 52, sentinelY + 39); c.textAlign = "left";
+    }
 
-    const avatarX = 53, avatarY = 124, avatarSide = 100;
+    // 26% larger cover-cropped NFT preview; still within the header/divider bounds.
+    const avatarX = 53, avatarY = 113, avatarSide = 126;
+    const collectionTextX = avatarX + avatarSide + 20;
     if (row.image) {
       try {
         const artwork = await loadCanvasImage(row.image);
         c.save();
-        c.beginPath(); c.roundRect(avatarX, avatarY, avatarSide, avatarSide, 13); c.clip();
+        c.beginPath(); c.roundRect(avatarX, avatarY, avatarSide, avatarSide, 16); c.clip();
         c.translate(avatarX, avatarY);
         cover(c, artwork, avatarSide, avatarSide);
         c.restore();
       } catch {
-        c.fillStyle = "#25203a"; c.fillRect(avatarX, avatarY, avatarSide, avatarSide);
+        c.fillStyle = "#25203a"; c.beginPath();
+        c.roundRect(avatarX, avatarY, avatarSide, avatarSide, 16); c.fill();
       }
     } else {
-      c.fillStyle = "#262039"; c.fillRect(avatarX, avatarY, avatarSide, avatarSide);
+      c.fillStyle = "#262039"; c.beginPath();
+      c.roundRect(avatarX, avatarY, avatarSide, avatarSide, 16); c.fill();
     }
     c.textAlign = "left";
     c.fillStyle = "#f9f5ff";
     c.font = "bold 43px " + family;
-    c.fillText(shortName(row.name, 25), 175, 168, 665);
+    c.fillText(shortName(row.name, 25), collectionTextX, 170, w - collectionTextX - 53);
     const chainName = row.chain.toUpperCase();
     try {
-      c.drawImage(await loadCanvasImage(scanChainById(row.chain).icon), 176, 187, 22, 22);
+      c.drawImage(await loadCanvasImage(scanChainById(row.chain).icon), collectionTextX, 187, 22, 22);
     } catch { /* Chain text remains readable when the image fails. */ }
     c.fillStyle = "#64cfff"; c.font = "bold 21px Arial";
-    c.fillText(chainName, 205, 205);
+    c.fillText(chainName, collectionTextX + 30, 205);
 
     const divider = (y: number) => {
       c.strokeStyle = "#443350"; c.lineWidth = 2; c.beginPath();
