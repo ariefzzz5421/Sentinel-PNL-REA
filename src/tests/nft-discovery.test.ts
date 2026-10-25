@@ -24,6 +24,8 @@ describe("multi-chain discovery is read-only and never fabricates profits", () =
   it("retrieves real Solana NFT metadata via Helius DAS but never calls a holding a trade", async () => {
     vi.stubEnv("HELIUS_API_KEY", "test-key");
     const fakeFetch = vi.fn(async (_url: unknown, args: RequestInit) => {
+      if (String(_url).includes("/v0/addresses/"))
+        return new Response(JSON.stringify([]), { status: 200 });
       const req = JSON.parse(String(args.body));
       expect(req.method).toBe("getAssetsByOwner");
       return new Response(JSON.stringify({
@@ -32,6 +34,8 @@ describe("multi-chain discovery is read-only and never fabricates profits", () =
           { id: sol, interface: "V1_NFT", content: { metadata: { name: "Test NFT" },
             links: { image: "https://example.org/test.png" } } },
           { id: sol, interface: "FungibleToken", content: { metadata: { name: "Fungible" } } },
+          { id: "11111111111111111111111111111112", interface: "CompressedNFT", content: { metadata: { name: "cNFT" } } },
+          { id: "11111111111111111111111111111113", interface: "V1_NFT", compression: { compressed: true }, content: { metadata: { name: "Hidden cNFT" } } },
         ] },
       }), { status: 200 });
     });
