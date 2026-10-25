@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowUpRight, ImageOff, Info } from "lucide-react";
+import { ArrowUpRight, ImageOff } from "lucide-react";
 import type { DiscoveryResult, DiscoveryAsset } from "@/lib/nft-discovery";
 
 function AssetCard({ asset }: { asset: DiscoveryAsset }) {
@@ -22,7 +22,13 @@ function AssetCard({ asset }: { asset: DiscoveryAsset }) {
   </a>;
 }
 
+
 export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
+  if (result.assets.length === 0) {
+    return <div className="discovery-empty-simple" role="status">No NFT Trades Found</div>;
+  }
+  const gain = result.matchedPnl;
+  const pnl = gain ? Number(gain.grossSol) : null;
   return <section className="discovery-results" aria-label="NFT discovery results">
     <div className="discovery-heading">
       <div><span className="discovery-eyebrow">PUBLIC ON-CHAIN DATA</span>
@@ -30,12 +36,13 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
       </div>
       <span className="discovery-counter">{result.assets.length} {result.mode === "holdings" ? "items" : "events"}</span>
     </div>
-    <div className="discovery-caveat">
-      <Info size={17} aria-hidden="true"/>
-      <p><strong>Read-only discovery · PnL not yet available.</strong> {result.note}</p>
-    </div>
-    {result.assets.length ? <div className="discovery-grid">
+    {gain && pnl !== null && Number.isFinite(pnl) ? <div className="discovery-matched-pnl">
+      <span>Matched gross SOL PnL</span>
+      <strong className={pnl < 0 ? "negative" : "positive"}>{pnl > 0 ? "+" : ""}{gain.grossSol} SOL</strong>
+      <small>{gain.matchedSales} matched sale{gain.matchedSales === 1 ? "" : "s"} · partial history · before fees</small>
+    </div> : null}
+    <div className="discovery-grid">
       {result.assets.map((asset) => <AssetCard asset={asset} key={asset.id}/>)}
-    </div> : <div className="discovery-empty">No indexed {result.mode === "holdings" ? "NFT holdings" : "ERC-721 transfers"} found in the queried scope. This does not prove a wallet has no historical NFT trades.</div>}
+    </div>
   </section>;
 }
