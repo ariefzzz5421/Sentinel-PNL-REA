@@ -119,14 +119,15 @@ export async function POST(request: Request, { params }: RouteContext) {
       const data = await readLimitedJSON(request) as { authRequestId?: unknown; verifications?: unknown };
       if (data?.authRequestId !== challenge.authRequestId || !Array.isArray(data.verifications) ||
           data.verifications.length !== challenge.challenges.length) return fail("Challenge mismatch.");
-      const matches = challenge.challenges.every((item) => data.verifications!.some((verification: unknown) => {
+      const verifications: unknown[] = Array.isArray(data.verifications) ? data.verifications : [];
+      const matches = challenge.challenges.every((item) => verifications.some((verification: unknown) => {
         if (!verification || typeof verification !== "object") return false;
         const signed = verification as { challengeId?: unknown; address?: unknown; signature?: unknown };
         return signed.challengeId === item.challengeId && signed.address === item.address &&
           typeof signed.signature === "string" && /^[0-9a-f]{2,8192}$/i.test(signed.signature) &&
           signed.signature.length % 2 === 0;
       }));
-      const identities = (data.verifications as { challengeId?: unknown }[]).map((v) => v?.challengeId);
+      const identities = verifications.map((v) => (v as { challengeId?: unknown } | null)?.challengeId);
       if (!matches || new Set(identities).size !== identities.length) return fail("Signature list does not match the issued challenges.");
       const verified = await ordnetFetch("/auth/verify", { body: {
         authRequestId: challenge.authRequestId, verifications: data.verifications,
