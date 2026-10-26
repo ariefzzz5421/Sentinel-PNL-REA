@@ -9,7 +9,7 @@ export async function GET() {
     nftScanning: { configured: Boolean(process.env.OPENSEA_API_KEY), provider: "OpenSea", needs: process.env.OPENSEA_API_KEY ? [] : ["OPENSEA_API_KEY"] },
     discovery: {
       solana: { configured: Boolean(process.env.HELIUS_API_KEY), scope: "current NFT holdings only", pnlReady: false },
-      bitcoin: { configured: Boolean(process.env.ORDISCAN_API_KEY), scope: "owned inscriptions for one Bitcoin address", pnlReady: false },
+      bitcoin: { configured: Boolean(process.env.ORDISCAN_API_KEY), scope: "read-only owned inscriptions and confirmed transfer history for one Bitcoin address", pnlReady: false, verifiedSaleFeedConfigured: Boolean(process.env.ORD_NET_SESSION_TOKEN), pnlScope: "verified, matched subset only; a configured token does not guarantee current authenticated access" },
       ink: { configured: Boolean(process.env.INK_RPC_URL), scope: "recent ERC-721 transfers for a specified contract", pnlReady: false },
     },
     ens: { dedicatedRpcConfigured: Boolean(process.env.ENS_RPC_URL), fallback: "Public Ethereum RPC; OpenSea resolution when configured" },
