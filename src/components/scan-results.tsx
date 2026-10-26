@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
-import { PnlCardStudio } from "@/components/pnl-card-studio";
+import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
 
@@ -82,6 +82,7 @@ export function ScanResults({
 }: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [cardFont, setCardFont] = useState<FontChoice>("oswald");
   const rows = useMemo(() => collectionRows(events.filter((event) => address === null ||
     event.wallet.toLowerCase() === address.toLowerCase()), holdings, holdingsComplete), [events, holdings, holdingsComplete, address]);
   const shown = useMemo(() => {
@@ -114,7 +115,7 @@ export function ScanResults({
       <p>{warning || "Fees, mints, transfers and unmatched sales may change realized PnL."}</p></details>}
     {shown.length ? <div className="scan-results-grid">
       {shown.map((row) => <article className="scan-collection-card" key={row.key}>
-        <button type="button" className="scan-card-open" onClick={() => { setActiveKey(row.key); }}
+        <button type="button" className="scan-card-open" onClick={() => { setActiveKey(row.key); setCardFont("oswald"); }}
           aria-label={"Open " + row.name + " PnL details and sharing"}>
           <div className="scan-collection-heading">
             {row.image
@@ -130,7 +131,7 @@ export function ScanResults({
             <div><span>HOLD</span><strong>{row.held ?? "—"}</strong></div>
           </div>
         </button>
-        <button type="button" className="scan-card-share" onClick={() => { setActiveKey(row.key); }}>
+        <button type="button" className="scan-card-share" onClick={() => { setActiveKey(row.key); setCardFont("oswald"); }}>
           <Share2 size={14}/> PnL card <ArrowUpRight size={13}/>
         </button>
       </article>)}
@@ -141,9 +142,9 @@ export function ScanResults({
       if (event.target === event.currentTarget) setActiveKey(null);
     }}>
       <div className="scan-detail-modal studio-modal" role="dialog" aria-modal="true" aria-label={selected.name + " NFT PnL"}>
-        <div className="scan-modal-head"><div><span>COLLECTION PERFORMANCE</span><h2>{selected.name}</h2></div>
+        <div className="scan-modal-head"><div><span>COLLECTION</span><h2 style={{ fontFamily: studioFontFamilies[cardFont] }}>{selected.name}</h2></div>
           <button type="button" aria-label="Close details" className="scan-modal-close" onClick={() => setActiveKey(null)}><X size={20}/></button></div>
-        <PnlCardStudio row={selected} wallet={address} partial={partial} onBack={() => setActiveKey(null)}/>
+        <PnlCardStudio row={selected} wallet={address} partial={partial} onBack={() => setActiveKey(null)} onFontChange={setCardFont}/>
         <div className="scan-modal-transactions"><h3>Recent recorded trades <span>{selected.trades.length}</span></h3>
           {selected.trades.length ? selected.trades.slice(0, 12).map((trade) =>
             <div className="scan-trade" key={trade.id}><div><b>{trade.type.toUpperCase()}</b><span>#{trade.tokenId} · {new Date(trade.date).toLocaleDateString()}</span></div>
