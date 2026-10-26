@@ -1934,8 +1934,8 @@ td small {
 .studio-controls{display:flex;align-items:stretch;gap:9px;flex-wrap:wrap}
 .studio-controls button{border:1px solid #483952;border-radius:12px;background:#1b1828;color:#c9bedb;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 13px;font-size:12px;font-weight:720;min-height:43px;flex:1}
 .studio-controls button:disabled{opacity:.53;cursor:not-allowed}
-.studio-controls .studio-x{background:#4dc2eb;color:#09111d;border-color:#53caf4;flex:1.2}
-.studio-download{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1px solid #52dbed;color:#070f19;background:linear-gradient(100deg,#51c2f1,#08ce82);border-radius:12px;padding:13px;margin:0 0 16px;font-size:16px;font-weight:840}
+.studio-controls .studio-x{background:#4dc2eb;color:#09111d;border-color:#53caf4;flex:1.2;min-height:48px;padding:13px;font-size:16px;font-weight:840;gap:10px}
+.studio-download{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1px solid #52dbed;color:#070f19;background:linear-gradient(100deg,#51c2f1,#08ce82);border-radius:12px;min-height:48px;padding:13px;margin:0 0 16px;font-size:16px;font-weight:840}
 .studio-rendered{border:1px solid #322b4e;background:#080812;border-radius:11px;overflow:hidden;line-height:0}
 .studio-rendered canvas{width:100%;height:auto;display:block}
 .studio-export-actions button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#211a32;border:1px solid #594271;border-radius:10px;color:#e8dffc;padding:12px;margin:13px 0 17px;font-weight:700}
@@ -2094,7 +2094,7 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .studio-back { min-height:39px; padding:9px; }
   .studio-choice-bar { margin:10px 0; gap:9px; }
   .studio-segment button { padding:9px 13px; font-size:12px; }
-  .studio-controls .studio-x { min-height:39px; }
+  .studio-controls .studio-x { min-height:43px; padding:9px; font-size:14px; }
   .studio-download { min-height:43px; margin-bottom:10px; padding:9px; font-size:14px; }
   .studio-rendered { border-radius:10px; }
   .studio-export-actions button { min-height:43px; margin:9px 0 12px; padding:9px; }
