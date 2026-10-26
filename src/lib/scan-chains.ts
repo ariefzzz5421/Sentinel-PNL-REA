@@ -8,7 +8,7 @@ export const scanChains = [
   // Solana uses base58 addresses and a different transaction/indexing model, not EVM chain IDs.
   { id: "solana", label: "SOL", chainId: null, currency: "SOL", scanReady: false, discoveryReady: true, icon: "/chains/solana.svg", unavailableReason: "Solana holdings discovery is available. Historical NFT sale PnL is not indexed yet." },
   { id: "ink", label: "INK", chainId: 57073, currency: "ETH", scanReady: false, discoveryReady: true, icon: "/chains/ink.svg", unavailableReason: "Ink: recent NFT transfer discovery is available with a collection contract. Historical sale PnL requires an indexer." },
-  { id: "bitcoin", label: "BTC", chainId: null, currency: "BTC", scanReady: false, discoveryReady: true, icon: "/chains/bitcoin.svg", unavailableReason: "Bitcoin Ordinals holdings discovery is available. Historical BTC sale PnL is not indexed yet." },
+  { id: "bitcoin", label: "BTC", chainId: null, currency: "BTC", scanReady: false, discoveryReady: true, icon: "/chains/bitcoin.svg", unavailableReason: "Bitcoin Ordinals: read-only holdings and transfer scanning; verified sale PnL needs an ORD.NET server session." },
 ] as const;
 
 export type ScanChain = (typeof scanChains)[number]["id"];
