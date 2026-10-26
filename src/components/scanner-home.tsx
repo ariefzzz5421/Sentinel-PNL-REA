@@ -75,7 +75,7 @@ export function ScannerHome() {
         });
         const data = await response.json() as DiscoveryResult & { error?: string };
         if (!response.ok) throw new Error(data.error || "NFT discovery failed.");
-        if (!Array.isArray(data.assets) || data.pnlAvailable !== false) throw new Error("Unexpected provider response.");
+        if (!Array.isArray(data.assets) || typeof data.pnlAvailable !== "boolean") throw new Error("Unexpected provider response.");
         setDiscovery(data);
         setMessage("Scan completed.");
       } catch (cause) {

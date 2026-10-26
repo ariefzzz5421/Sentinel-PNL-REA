@@ -167,14 +167,14 @@ The PnL PNG renderer now places the Sentinel brand icon in the **upper-right** c
 
 ## Non-EVM NFT Discovery (Helius · Ink · Ordiscan)
 
-The existing ETH/WETH EVM realized PnL scanner remains unchanged. NFT Discovery is a **separate read-only feature** that never combines Solana SOL, Bitcoin BTC or unpriced Ink transfers into ETH PnL. Results explicitly say **PnL not yet available**.
+The existing ETH/WETH EVM realized PnL scanner remains unchanged. NFT Discovery is a **separate read-only feature** that never combines SOL, BTC or unpriced Ink transfers into ETH accounting. Verified Ordinals BTC PnL and the existing matched gross SOL PnL are reported only in their native currency; absent cost basis is **Unknown**.
 
 Required **server-only** Vercel environment variables, for the relevant Production / Preview targets:
 
 | Key | Usage | Limits |
 |---|---|---|
 | HELIUS_API_KEY | Solana DAS getAssetsByOwner | Current NFT holdings; maximum 2 × 100 per scan |
-| ORDISCAN_API_KEY | Ordiscan address inscriptions | Bitcoin inscriptions currently held by one address; maximum 2 × 100 |
+| ORDISCAN_API_KEY | Ordiscan owned inscriptions, confirmed address activity and optional collection floors | Bitcoin holdings max 3 × 100; history max 2 × 1,000; sent-inscription metadata max 12 |\n| ORD_NET_SESSION_TOKEN (optional) | ORD.NET confirmed sales + collection floors | Read-only GET; sales max 2 × 100 per collection, max 4 collections per scan; session expires after ~1 hour |
 | INK_RPC_URL | Ink Mainnet eth_chainId, eth_blockNumber, eth_getLogs | Specific ERC-721 contract only; latest 1,000 blocks |
 
 The keys stay on server. The public /api/status endpoint reveals booleans, never secrets. Redeploy Vercel after adding env variables.
@@ -183,11 +183,11 @@ Usage:
 1. Paste EVM wallet, select INK and enter a collection contract, then Scan. This shows recent inbound/outbound ERC-721 Transfer logs, not complete holdings or sales.
 2. Paste 32-byte base58 Solana address and hit Scan; it auto-selects SOL, queries Helius DAS, and shows owned NFTs.
 3. Paste bc1… / 1… / 3… Bitcoin mainnet address and hit Scan; it auto-selects BTC and queries Ordiscan inscriptions. Address syntax is checked, but the provider confirms actual ownership.
-4. SOL / BTC have no contract-filtered scan or Bot PnL. Results are bounded with explicit incomplete-data explanations.
+4. SOL / BTC have no contract-filtered scan or Bot PnL. BTC shows owned inscription cards, history, collection floors and verified-subset realized/unrealized PnL where prices are verified. Scans are bounded and explain incomplete coverage.
 
-**Not supported yet:** historical SOL NFT buy/sell prices, complete Bitcoin Ordinals marketplace prices, Ink historical backfills, complex/ERC-1155 mint costs, cross-native-currency realized PnL. An API key does not establish a historical cost basis; indexed marketplace data and a multi-currency accounting engine are required.
+**Not supported:** complete cross-address Bitcoin wallet accounting, attribution of unverified transfers, incomplete marketplace sale histories, precise BTC mining/marketplace fees, all historical Solana sales, Ink historical backfills, complex/ERC-1155 mint costs, or combined cross-currency PnL. An address by itself never establishes historical cost basis.
 
-API docs: https://www.helius.dev/docs/das-api · https://ordiscan.com/docs/api · https://docs.inkonchain.com/tools/rpc .
+API docs: https://www.helius.dev/docs/das-api · https://ordiscan.com/docs/api · https://developers.ord.net/reference/sales/ · https://developers.ord.net/reference/authentication/ · https://docs.inkonchain.com/tools/rpc .
 
 
 ### Public discovery UI & matched Solana gross PnL
@@ -196,6 +196,14 @@ API docs: https://www.helius.dev/docs/das-api · https://ordiscan.com/docs/api �
 - The home kicker is **SENTINEL ANALYSIS**.
 - Solana holdings explicitly exclude compressed NFT assets (both the CompressedNFT interface and compression flag). This does not verify legitimacy; a standard NFT can still be spam.
 - For supported non-compressed NFT marketplace `NFT_SALE` transactions, the Helius Enhanced Transactions API may return a seller, buyer, **lamports** price and a single NFT mint. The backend conservatively matches a purchase and a later sale of the *same mint* by one wallet within the latest 200 indexed transactions. It reports **matched gross SOL PnL before fees** only if one or more pairs have verifiable prices. Otherwise the UI shows **— SOL**, never a false zero. Unsupported sources, fee attribution, SOL-token swaps, bundles, mints, unpaired sales and complete historical coverage are excluded. Helius Enhanced API is a legacy service and access may be restricted by plan; the existing Helius holdings scanner remains functional when PnL history is inaccessible.
-- Taproot Wizards #0581 owner address listed publicly at https://ord.net/inscription/149814 is used as a **mocked unit-test fixture**, not a claim that its ownership or live API response is verified at deploy time. Bitcoin read-only discovery stays separate from PnL.
+- Taproot Wizards #0581 owner address listed publicly at https://ord.net/inscription/149814 is used as a **mocked unit-test fixture**, not a claim that its ownership or live API response is verified at deploy time. Bitcoin results use an isolated BTC-denominated calculator, never the ETH event ledger.
 
 To validate an address with real data, use the production site, a public wallet, and browser Network tab; do not paste private API keys or seed phrases.
+
+### Bitcoin Ordinals: reliability, read-only operations & setup
+
+- Configure `ORDISCAN_API_KEY` on the Vercel server for public holdings and confirmed transfer history. Use **no** `NEXT_PUBLIC_` prefix. A client only pastes a public mainnet Bitcoin address; it does not connect a wallet, sign messages or provide private keys.
+- If available, provision `ORD_NET_SESSION_TOKEN` **server-side** for `GET /sales` and `GET /collection-stats/floors`. **ORD.NET does not offer a normal API key**. Its bearer token is obtained via a separate wallet challenge/signature by the site operator, and expires in approximately one hour. Sentinel never calls any ORD.NET trade endpoint, signs on behalf of users, or refreshes sessions with private keys. Without a valid session, known prices and realized PnL remain **Unknown**; Ordiscan-only market floors, if available, are indicative quotes, not acquisition costs.
+- Per-scan limits to protect rate quotas: three owned-inscription pages (300), two transfer-activity pages (2,000), twelve missing-item metadata lookups, and up to four collection slugs (200 confirmed sales each from ORD.NET). Those are **recent bounded windows**, never a complete historic wallet ledger. Provider-response caching is 1–5 minutes in each server instance, and results are privately returned without storing addresses in browser persistence for this non-EVM scan.
+- A BTC `buy` or `sell` requires **matching inscription ID, settlement txid, confirmed Ordiscan transfer direction and wallet/counterpart, plus an ORD.NET confirmed sale price**. Transfers without matching sales remain `RECEIVED` or `SENT`. Matching a sell with an unknown buy basis still shows realized PnL as **Unknown**. A positive acquisition price and sale price form a gross, pre-fee realized PnL and ROI; holdings with verified price history and available collection floor may show a separate **partial estimated unrealized** value.
+- BTC funds held at **other addresses**, unindexed inscription activity, unclassified collections, OTC transactions absent from the indexed confirmed sales, inscriptions minted without known mint cost, and marketplace fees cannot be inferred. Avoid treating a collection floor or BTC output-value transfer as a historic transaction price. Public fixture tests mock provider responses and are **not live financial verification**.

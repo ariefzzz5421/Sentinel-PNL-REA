@@ -2225,3 +2225,31 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
 .discovery-matched-pnl strong.negative{color:#ff889a}
 .discovery-matched-pnl small{color:#a39bb4;font-size:11px}
 @media(max-width:600px){.discovery-empty-simple{margin:10px 0 24px;padding:29px 12px;font-size:15px}.discovery-matched-pnl strong{font-size:22px}}
+
+/* Bitcoin Ordinals extends the existing discovery cards without changing other chains. */
+.btc-ordinal-report{display:grid;gap:15px;margin:6px 0 15px}
+.btc-ordinal-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.btc-ordinal-stats>div{min-width:0;display:flex;flex-direction:column;gap:8px;padding:13px;border:1px solid #493e65;border-radius:11px;background:#201a32}
+.btc-ordinal-stats span{font-size:11px;color:#c2addf;font-weight:740}
+.btc-ordinal-stats strong{font-size:clamp(15px,1.8vw,21px);font-family:var(--sentinel-data,monospace);overflow-wrap:anywhere}
+.btc-ordinal-stats small,.btc-ordinal-section small,.btc-ordinal-muted{color:#a89cb9;font-size:10px;line-height:1.55}
+.btc-ordinal-section{min-width:0}
+.btc-ordinal-section h3,.btc-ordinal-holdings-heading{font-size:14px;font-weight:800;margin:0 0 10px}
+.btc-ordinal-section h3 small{font-weight:500;margin-left:7px}
+.btc-ordinal-table{overflow-x:auto;border:1px solid #413450;border-radius:10px}
+.btc-ordinal-row{display:grid;grid-template-columns:minmax(130px,1.6fr) 48px repeat(3,minmax(115px,1fr));gap:8px;padding:11px 12px;align-items:center;border-bottom:1px solid #372d47;min-width:575px;font-size:11px}
+.btc-ordinal-row:last-child{border-bottom:0}
+.btc-ordinal-row span:first-child{overflow-wrap:anywhere}
+.btc-ordinal-column-head{font-weight:750;color:#b7a2ce;background:#221a31}
+.btc-ordinal-row span:not(:first-child){font-family:var(--sentinel-data,monospace)}
+.btc-ordinal-activity{display:grid;gap:5px;max-height:330px;overflow:auto}
+.btc-ordinal-activity a{display:flex;align-items:center;gap:10px;justify-content:space-between;background:#1d1729;border:1px solid #413450;border-radius:9px;padding:10px 12px}
+.btc-ordinal-activity a:hover{border-color:#9472c8}
+.btc-ordinal-activity a>div:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.btc-ordinal-activity a>div:first-child strong{font-size:11px;color:#d8bfeb}
+.btc-ordinal-activity a>div:first-child span{font-size:10px;color:#a89cb9}
+.btc-ordinal-trade-price{display:flex;flex-direction:column;gap:4px;min-width:0;align-items:flex-end;text-align:right}
+.btc-ordinal-trade-price strong{font-size:12px}
+.btc-ordinal-trade-price small{font-size:10px}
+.btc-ordinal-disclaimer{padding:11px 12px;margin:0 0 14px;color:#c6b9d6;background:#20192e;border:1px solid #504269;border-radius:10px;font-size:11px;line-height:1.6}
+@media(max-width:600px){.btc-ordinal-stats{grid-template-columns:1fr}.btc-ordinal-stats>div{gap:5px;padding:11px}.btc-ordinal-activity a{padding:9px}.btc-ordinal-trade-price small{max-width:145px}}
