@@ -12,8 +12,8 @@ export type StudioCollection = {
 };
 type StudioMode = "complete" | "simple";
 type CardSize = "fixed" | "image";
-type FontChoice = "space" | "satoshi" | "plex" | "oswald" | "orbitron";
-const fonts: Record<FontChoice, string> = {
+export type FontChoice = "space" | "satoshi" | "plex" | "oswald" | "orbitron";
+export const studioFontFamilies: Record<FontChoice, string> = {
   space: '"Space Grotesk", Arial, sans-serif',
   satoshi: 'Satoshi, "Inter", Arial, sans-serif',
   plex: '"IBM Plex Mono", monospace',
@@ -64,8 +64,9 @@ function cover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, width: numb
   const w = img.naturalWidth * factor, h = img.naturalHeight * factor;
   ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
 }
-export function PnlCardStudio({ row, wallet, partial, onBack }: {
+export function PnlCardStudio({ row, wallet, partial, onBack, onFontChange }: {
   row: StudioCollection; wallet: string | null; partial: boolean; onBack: () => void;
+  onFontChange?: (font: FontChoice) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -147,12 +148,12 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     if (!context) throw new Error("Canvas unavailable");
     const c: CanvasRenderingContext2D = context;
     const w = buffer.width, h = buffer.height;
-    const family = fonts[font];
+    const family = studioFontFamilies[font];
 
     try {
       await Promise.all([
         document.fonts.load("700 46px " + family.split(",")[0]),
-        document.fonts.load("700 46px " + fonts.plex.split(",")[0]),
+        document.fonts.load("700 46px " + studioFontFamilies.plex.split(",")[0]),
       ]);
     } catch { /* Native fallback fonts stay available. */ }
 
@@ -217,7 +218,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       c.textAlign = "left"; c.font = "600 25px " + family;
       c.fillStyle = "#ada2bd"; c.fillText(label, 55, y, 400);
       const dollars = usd === null ? "" : " (" + (usd < 0 ? "-$" : "$") + Math.abs(usd).toFixed(2) + ")";
-      c.textAlign = "right"; c.fillStyle = color; c.font = "bold 29px " + fonts.plex;
+      c.textAlign = "right"; c.fillStyle = color; c.font = "bold 29px " + studioFontFamilies.plex;
       c.fillText(value + dollars, w - 55, y, 475);
       c.textAlign = "left";
     };
@@ -231,7 +232,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
     const printPnl = (y: number, maxWidth: number) => {
       c.fillStyle = pnlColor;
       c.textAlign = "left";
-      c.font = "bold 50px " + fonts.plex;
+      c.font = "bold 50px " + studioFontFamilies.plex;
       c.fillText(mainPnl + secondary, 55, y, maxWidth);
     };
 
@@ -251,7 +252,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       divider(886);
       c.fillStyle = "#ada2bd"; c.font = "500 25px " + family;
       c.fillText("REALIZED PROFIT", 55, 942);
-      c.font = "bold 30px " + fonts.plex; c.fillStyle = pnlColor;
+      c.font = "bold 30px " + studioFontFamilies.plex; c.fillStyle = pnlColor;
       const roiText = metrics.roi === null ? "ROI —" :
         (metrics.roi > 0 ? "+" : "") + metrics.roi.toFixed(2) + "%";
       c.fillText(roiText, 55, 994);
@@ -271,7 +272,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
       c.fillStyle = "#d9c0ed"; c.font = "bold " + aliasSize + "px " + family;
       c.fillText("@" + aliasText.replace(/^@/, ""), 54, h - 94, w - 108);
     }
-    c.font = "20px " + fonts.plex; c.fillStyle = "#a89eb9";
+    c.font = "20px " + studioFontFamilies.plex; c.fillStyle = "#a89eb9";
     c.fillText(walletLabel, 54, h - 52, w - 108);
 
     if (renderId !== renderSerial.current) return false;
@@ -338,7 +339,12 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         <button type="button" className={mode === "simple" ? "active" : ""} onClick={() => setMode("simple")}>Simple</button>
       </div>
       <div className="studio-controls">
-        <button type="button" className="studio-x" onClick={openX}>Share on X</button>
+        <button type="button" className="studio-x" onClick={openX}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false">
+            <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.847h-7.406l-5.8-7.584-6.64 7.584H.473l8.6-9.83L0 1.153h7.594l5.243 6.932 6.064-6.932Zm-1.29 19.494h2.039L6.486 3.244H4.298l13.313 17.403Z"/>
+          </svg>
+          Share on X
+        </button>
       </div>
     </div>
     <button type="button" className="studio-download" disabled={busy} onClick={() => void save(false)}><Download size={18}/> {busy ? "Preparing…" : "Download PNG"}</button>
@@ -355,7 +361,7 @@ export function PnlCardStudio({ row, wallet, partial, onBack }: {
         </div>
         <div><span>Card size</span><div className="studio-segment"><button type="button" className={cardSize === "fixed" ? "active" : ""} onClick={() => setCardSize("fixed")}>Fixed</button>
           <button type="button" disabled={!background} className={cardSize === "image" ? "active" : ""} onClick={() => setCardSize("image")}>Fit image</button></div></div>
-        <label>Font <select value={font} onChange={(e) => setFont(e.target.value as FontChoice)}>
+        <label>Font <select value={font} onChange={(e) => { const nextFont = e.target.value as FontChoice; setFont(nextFont); onFontChange?.(nextFont); }}>
           <option value="oswald">Oswald</option><option value="space">Space Grotesk</option><option value="satoshi">Satoshi</option><option value="plex">IBM Plex Mono</option><option value="orbitron">Orbitron</option>
         </select></label>
         <label>Alias size <div className="studio-range"><input type="range" min="16" max="42" value={aliasSize} onChange={(e) => setAliasSize(Number(e.target.value))}/><span>{aliasSize}px</span></div></label>
