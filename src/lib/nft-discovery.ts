@@ -2,6 +2,8 @@ import { z } from "zod";
 import { isBitcoinAddress, isSolanaAddress, type DiscoveryChain } from "./discovery-wallet";
 import { addressSchema } from "./schema";
 import { getMatchedSolPnl, type MatchedSolPnl } from "./solana-pnl";
+import { scanBitcoinOrdinals, BitcoinProviderError } from "./bitcoin-ordinals";
+import type { BitcoinPnl } from "./bitcoin-pnl";
 
 export type DiscoveryAsset = {
   id: string; name: string; imageUrl: string | null; url: string;
@@ -13,6 +15,7 @@ export type DiscoveryResult = {
   partial: boolean; mode: "holdings" | "recent-transfers";
   note: string; pnlAvailable: boolean;
   matchedPnl?: MatchedSolPnl;
+  bitcoinPnl?: BitcoinPnl;
 };
 export class DiscoveryError extends Error {
   constructor(message: string, public status = 502) { super(message); }
@@ -108,46 +111,24 @@ async function helius(input: Input, fetcher: typeof fetch): Promise<DiscoveryRes
 }
 
 async function ordiscan(input: Input, fetcher: typeof fetch): Promise<DiscoveryResult> {
-  const key = process.env.ORDISCAN_API_KEY;
-  if (!key) throw new DiscoveryError("ORDISCAN_API_KEY is missing in this deployment.", 503);
-  if (!isBitcoinAddress(input.address)) throw new DiscoveryError("Paste a Bitcoin mainnet address (bc1…, 1… or 3…).", 400);
-  if (input.contract) throw new DiscoveryError("Bitcoin Ordinals have inscription IDs, not EVM contracts. Clear the contract field.", 400);
-  const assets = new Map<string, DiscoveryAsset>();
-  let partial = false;
-  for (let page = 1; page <= 2; page++) {
-    let response: Response;
-    try {
-      response = await fetcher("https://api.ordiscan.com/v1/address/" + encodeURIComponent(input.address) +
-        "/inscriptions?page=" + page, {
-        headers: { Authorization: "Bearer " + key, Accept: "application/json" },
-        signal: AbortSignal.timeout(11000), cache: "no-store", redirect: "error",
-      });
-    } catch { throw new DiscoveryError("Ordiscan connection failed or timed out."); }
-    const raw = obj(await getJson(response));
-    if (!raw || !Array.isArray(raw.data) || raw.data.length > 100)
-      throw new DiscoveryError("Unexpected Ordiscan inscriptions response.");
-    for (const item of raw.data) {
-      const a = obj(item);
-      if (!a || typeof a.inscription_id !== "string" || !/^[a-f0-9]{64}i\d+$/i.test(a.inscription_id)) continue;
-      if (a.owner_address !== input.address) continue;
-      const id = a.inscription_id;
-      const isImage = typeof a.content_type === "string" && /^image\/(png|jpeg|webp|gif)$/i.test(a.content_type);
-      assets.set(id, {
-        id, name: "Inscription " + (typeof a.inscription_number === "number" ? "#" + a.inscription_number : id.slice(0, 10)),
-        collection: null, kind: "holding",
-        imageUrl: isImage ? safeImage(a.content_url) : null,
-        url: "https://ordiscan.com/inscription/" + id,
-      });
-    }
-    if (raw.data.length < 100) break;
-    if (page === 2) partial = true;
+  if (!isBitcoinAddress(input.address))
+    throw new DiscoveryError("Paste a valid Bitcoin mainnet address (bc1…, 1… or 3…).", 400);
+  if (input.contract)
+    throw new DiscoveryError("Bitcoin Ordinals have inscription IDs, not EVM contracts. Clear the contract field.", 400);
+  try {
+    const data = await scanBitcoinOrdinals(input.address, fetcher);
+    return {
+      chain: "bitcoin", address: input.address, assets: data.assets,
+      partial: data.partial, mode: "holdings",
+      pnlAvailable: data.report.matchedSales > 0 || data.report.pricedHoldings > 0,
+      bitcoinPnl: data.report,
+      note: data.note,
+    };
+  } catch (error) {
+    if (error instanceof BitcoinProviderError)
+      throw new DiscoveryError(error.message, error.status);
+    throw error;
   }
-  return {
-    chain: "bitcoin", address: input.address, assets: [...assets.values()],
-    partial, mode: "holdings", pnlAvailable: false,
-    note: "Ordiscan provides currently owned inscriptions for this address, not a complete wallet-wide trade ledger. Transfers are not necessarily sales; BTC cost basis and PnL remain unknown." +
-      (partial ? " Results were capped at 200 inscriptions." : ""),
-  };
 }
 
 const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
