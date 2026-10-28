@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowUpRight, ImageOff } from "lucide-react";
+import { ArrowUpRight, Download, ImageOff } from "lucide-react";
+import { BitcoinPnlCardStudio } from "@/components/bitcoin-pnl-card-studio";
 import type { DiscoveryResult, DiscoveryAsset } from "@/lib/nft-discovery";
 import type { BitcoinPnl } from "@/lib/bitcoin-pnl";
 
@@ -27,8 +28,11 @@ function amount(value: string | null, unit: "BTC" | "%"): string {
   if (unit === "%") return Number(value).toFixed(2) + "%";
   return (value.startsWith("-") ? "" : "+") + value + " BTC";
 }
-function BitcoinSummary({ pnl, owned }: { pnl: BitcoinPnl; owned: number }) {
+function BitcoinSummary({ pnl, owned, onCreateCard }: { pnl: BitcoinPnl; owned: number; onCreateCard: () => void }) {
   return <div className="btc-ordinal-report">
+    <button type="button" className="btc-create-card" onClick={onCreateCard}>
+      <Download size={17} aria-hidden="true"/> Create PnL Card <span>Wallet / Collection · PNG</span>
+    </button>
     <div className="btc-ordinal-stats">
       <div><span>Realized PnL · verified matches</span><strong>{amount(pnl.realizedBtc, "BTC")}</strong>
         <small>{pnl.matchedSales} matched buy→sell inscriptions · before fees</small></div>
@@ -76,6 +80,7 @@ function BitcoinSummary({ pnl, owned }: { pnl: BitcoinPnl; owned: number }) {
 }
 
 export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
+  const [showBitcoinCard, setShowBitcoinCard] = useState(false);
   if (result.assets.length === 0 && !(result.chain === "bitcoin" && result.bitcoinPnl)) {
     return <div className="discovery-empty-simple" role="status">No NFT Trades Found</div>;
   }
@@ -89,7 +94,8 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
       <span className="discovery-counter">{result.assets.length} {result.mode === "holdings" ? "items" : "events"}</span>
     </div>
     {result.chain === "bitcoin" && result.bitcoinPnl &&
-      <BitcoinSummary pnl={result.bitcoinPnl} owned={result.assets.length}/>}
+      <BitcoinSummary pnl={result.bitcoinPnl} owned={result.assets.length}
+        onCreateCard={() => setShowBitcoinCard(true)}/>}
     {result.chain === "solana" ? <div className="discovery-matched-pnl">
       <span>Matched gross SOL PnL</span>
       <strong className={pnl !== null && pnl < 0 ? "negative" : "positive"}>{gain && pnl !== null && Number.isFinite(pnl) ? (pnl > 0 ? "+" : "") + gain.grossSol + " SOL" : "— SOL"}</strong>
@@ -102,5 +108,9 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
         {result.assets.map((asset) => <AssetCard asset={asset} key={asset.id}/>)}
       </div>
     </>}
+    {result.chain === "bitcoin" && result.bitcoinPnl && showBitcoinCard &&
+      <BitcoinPnlCardStudio address={result.address} assets={result.assets}
+        report={result.bitcoinPnl} partial={result.partial}
+        onBack={() => setShowBitcoinCard(false)}/>}
   </section>;
 }
