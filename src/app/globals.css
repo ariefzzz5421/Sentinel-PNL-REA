@@ -2253,3 +2253,19 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
 .btc-ordinal-trade-price small{font-size:10px}
 .btc-ordinal-disclaimer{padding:11px 12px;margin:0 0 14px;color:#c6b9d6;background:#20192e;border:1px solid #504269;border-radius:10px;font-size:11px;line-height:1.6}
 @media(max-width:600px){.btc-ordinal-stats{grid-template-columns:1fr}.btc-ordinal-stats>div{gap:5px;padding:11px}.btc-ordinal-activity a{padding:9px}.btc-ordinal-trade-price small{max-width:145px}}
+
+
+/* BTC PnL card maker reuses the existing Sentinel Studio buttons and preview. */
+.btc-create-card{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1px solid #65cbe5;background:#211d37;color:#d5f2ff;border-radius:12px;padding:13px 14px;font-size:15px;font-weight:800}
+.btc-create-card:hover{background:#2b2549;border-color:#9de9fd}
+.btc-create-card span{color:#b6a9d0;font-size:11px;font-weight:500}
+.btc-create-card:focus-visible{outline:2px solid #79d8fd;outline-offset:2px}
+.bitcoin-card-dialog{width:min(100%,700px)}
+.bitcoin-card-options{display:flex;flex-direction:column;gap:11px;padding:13px 0 3px}
+.bitcoin-card-options .studio-segment{width:100%}
+.bitcoin-card-options .studio-segment button{flex:1}
+.bitcoin-card-options label{display:flex;align-items:center;gap:11px;flex-wrap:wrap;color:#c6b5db;font-size:12px;font-weight:700}
+.bitcoin-card-options select{flex:1;min-width:160px;border:1px solid #544267;background:#141022;color:#f3eaff;border-radius:9px;padding:9px 12px}
+.bitcoin-card-options select:focus-visible{outline:2px solid #79d8fd;outline-offset:2px}
+.bitcoin-card-dialog .studio-rendered{max-width:100%}
+@media(max-width:600px){.btc-create-card{font-size:13px;gap:7px}.btc-create-card span{font-size:10px}.bitcoin-card-options .studio-segment button{font-size:12px;padding:10px 9px}}
