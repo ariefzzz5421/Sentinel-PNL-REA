@@ -75,6 +75,6 @@ describe("read-only Bitcoin PnL card model", () => {
   it("only offers collection cards for indexed collections", () => {
     expect(() => buildBitcoinCardView(wallet, assets, unknownReport,
       "collection", "not-a-collection")).toThrow(/Choose a collection/);
-    expect(maskedBitcoinAddress(wallet)).toBe("bc1pr8vjq0…vvseyjcma");
+    expect(maskedBitcoinAddress(wallet)).toBe("bc1pr8vjq0…vseyjcma");
   });
 });
