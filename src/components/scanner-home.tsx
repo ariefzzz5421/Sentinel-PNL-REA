@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CircleHelp, FileInput, ScanSearch } from "lucide-react";
 import { addressSchema, eventsSchema, type TradeEvent } from "@/lib/schema";
-import { autoEvmChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
+import { autoPricedChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChains } from "@/lib/scan-chains";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
@@ -23,7 +23,7 @@ export function ScannerHome() {
   const [error, setError] = useState(false);
   const [resultEvents, setResultEvents] = useState<TradeEvent[] | null>(null);
   const [discovery, setDiscovery] = useState<DiscoveryResult | null>(null);
-  const [inkDiscovery, setInkDiscovery] = useState<DiscoveryResult | null>(null);
+  const [evmDiscoveries, setEvmDiscoveries] = useState<DiscoveryResult[]>([]);
   const [networkStatuses, setNetworkStatuses] = useState<AutoScanNetworkStatus[]>([]);
   const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
   const [holdingsComplete, setHoldingsComplete] = useState(false);
@@ -46,7 +46,7 @@ export function ScannerHome() {
   async function scan(mode: "wallet" | "contract" | "bot") {
     setResultEvents(null);
     setDiscovery(null);
-    setInkDiscovery(null);
+    setEvmDiscoveries([]);
     setNetworkStatuses([]);
     setResultHoldings([]);
     setHoldingsComplete(false);
@@ -98,7 +98,7 @@ export function ScannerHome() {
       if (mode !== "wallet" && !addressSchema.safeParse(contractFilter).success)
         throw new Error("Enter a valid EVM collection contract address.");
 
-      setMessage("Scanning " + addresses.length + " wallet(s) across ETH, Base, ARB and RH…");
+      setMessage("Scanning " + addresses.length + " wallet(s) across ETH, Base, ARB, RH, ARC and INK…");
       const scan = await scanAllEvmNetworks(addresses, mode,
         mode === "wallet" ? undefined : contractFilter, fetch,
         (complete, total) => setMessage("Scanning supported EVM networks… " + complete + "/" + total));
@@ -129,7 +129,7 @@ export function ScannerHome() {
           if (payload && typeof payload === "object" && "holdings" in payload &&
               Array.isArray(payload.holdings)) {
             holdings = (payload.holdings as PublicHolding[])
-              .filter(item => autoEvmChains.some(chain => chain === item.chain) &&
+              .filter(item => autoPricedChains.some(chain => chain === item.chain) &&
                 addressSchema.safeParse(item.contract).success);
             holdingsComplete = !("partial" in payload && payload.partial === true);
             if (!holdingsComplete) throw new Error("Holdings list is incomplete.");
@@ -140,28 +140,8 @@ export function ScannerHome() {
         }
       }
 
-      // Ink has a read-only ERC-721 transfer adapter, but it cannot discover
-      // all wallet NFTs without a collection contract. Include it when the
-      // user supplies a valid contract, without inventing Ink PnL prices.
-      if (addresses.length === 1 && mode !== "bot" &&
-          addressSchema.safeParse(contractFilter).success) {
-        try {
-          const response = await fetch("/api/nft-discovery", {
-            method: "POST", headers: { "content-type": "application/json" },
-            body: JSON.stringify({ chain: "ink", address: addresses[0], contract: contractFilter }),
-          });
-          const data = await response.json() as DiscoveryResult & { error?: string };
-          if (!response.ok) throw new Error(data.error || "Ink transfer discovery unavailable.");
-          if (!Array.isArray(data.assets) || data.chain !== "ink")
-            throw new Error("Unexpected Ink discovery response.");
-          setInkDiscovery(data);
-        } catch (cause) {
-          partial = true;
-          warnings.push("INK: " + (cause instanceof Error ? cause.message : "Discovery failed."));
-        }
-      }
-
       setNetworkStatuses(scan.statuses);
+      setEvmDiscoveries(scan.discoveries);
       setResultEvents(scan.events);
       setResultHoldings(holdings);
       setHoldingsComplete(holdingsComplete);
@@ -174,7 +154,9 @@ export function ScannerHome() {
           JSON.stringify({ partial, warning }));
       } catch { /* Scan results remain available even without session storage. */ }
       setMessage((resolved.description ? resolved.description + " " : "") +
-        "Scan complete · " + scan.events.length + " NFT events across " +
+        "Scan complete · " + scan.events.length + " priced EVM NFT events, " +
+        scan.discoveries.reduce((count, item) => count + item.assets.length, 0) +
+        " Arc/Ink indexed holdings and transfers across " +
         scan.requestsSucceeded + "/" +
         (scan.requestsSucceeded + scan.requestsFailed) + " successful network requests." +
         (scan.requestsFailed ? " Some networks failed; see Details below." : ""));
@@ -199,11 +181,12 @@ export function ScannerHome() {
       <main className="scanner-main" id="scanner">
         <div className="scanner-chains" role="img" aria-label="Network logos: Ethereum, Base, Arbitrum, Robinhood, Arc, Solana, Ink and Bitcoin. Network selection is automatic.">
           {scanChains.map((item) => <span key={item.id} className="scanner-chain-display"
-            title={item.scanReady ? item.label + " scanned automatically for EVM addresses" : item.label + ": " + ("unavailableReason" in item ? item.unavailableReason : "Requires a matching address")}>
+            title={item.scanReady || item.id === "arc" || item.id === "ink"
+              ? item.label + " scanned automatically for EVM addresses" : item.label + ": " + ("unavailableReason" in item ? item.unavailableReason : "Requires a matching address")}>
             <Image src={item.icon} width={19} height={19} alt=""/>{item.label}
           </span>)}
         </div>
-        <p className="scanner-network-note">Auto scan: ETH · Base · ARB · RH for 0x wallets. BTC/SOL detected by address. INK needs a contract; ARC is not supported yet.</p>
+        <p className="scanner-network-note">Auto scan for 0x wallets: ETH · Base · ARB · RH · ARC · INK. BTC/SOL detected from their own address formats; Arc/Ink price history may be Unknown.</p>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> SENTINEL ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
@@ -218,7 +201,7 @@ export function ScannerHome() {
             </div>
             <button className="scanner-submit" type="button" disabled={busy} onClick={() => void scan("wallet")}>{busy ? "Scanning…" : "Scan"}</button>
           </div>
-          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder="Collection contract (optional for Ink, required for Contract / Bot PnL)"/>
+          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder="Collection contract (optional for wallet scan, required for Contract / Bot PnL)"/>
           <div className="scanner-secondary-row">
             <button type="button" className="scanner-contract-btn" disabled={busy} onClick={() => void scan("contract")}>Scan Contract</button>
             <button type="button" className="scanner-bot-btn" disabled={busy} onClick={() => void scan("bot")}>Bot PNL</button>
@@ -229,7 +212,7 @@ export function ScannerHome() {
         </p>}
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
           ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning} networkStatuses={networkStatuses}/>
-            {inkDiscovery && <DiscoveryResults result={inkDiscovery}/>}</>
+            {evmDiscoveries.map(result => <DiscoveryResults key={result.chain + ":" + result.address} result={result}/>) }</>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
       <aside className="scanner-side scanner-side-right" aria-label="How to use">
