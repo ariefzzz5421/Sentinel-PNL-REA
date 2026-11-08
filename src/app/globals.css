@@ -2408,3 +2408,38 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .scanner-chains{overflow-x:auto;mask-image:none}
   .market-tape .tape-track{animation:none!important;transform:none!important}
 }
+
+/* Live ETH/USD spot value is an annotation, not additional historical PnL. */
+.scan-collection-pnl{min-width:100px;max-width:48%;margin-left:7px}
+.scan-collection-pnl strong{white-space:normal;overflow-wrap:normal}
+.scan-pnl-usd{display:inline-block;font-size:.62em;font-weight:690;letter-spacing:-.01em;white-space:nowrap;vertical-align:baseline}
+.scan-collection-unpriced .scan-collection-pnl .unknown{font-size:clamp(13px,1.75vw,17px);color:#b5a8c9}
+.scan-collection-unpriced .scan-card-share{text-decoration:none}
+.indexed-collection-grid{margin-top:12px}
+.scan-collection-card{padding:19px}
+.scan-collection-heading{gap:13px}
+.scan-results-grid{row-gap:17px}
+.scanner-wallet-field textarea{padding-left:18px;padding-top:16px}
+@media(max-width:600px){
+  .scanner-form{padding:15px;border-radius:18px}
+  .scanner-wallet-field textarea{
+    min-height:59px;height:60px;padding:16px 70px 12px 18px;
+    line-height:1.45
+  }
+  .scanner-file{right:9px;bottom:9px}
+  .scanner-primary-row{gap:12px}
+  .scanner-contract{margin-top:12px;padding-left:16px}
+  .scanner-secondary-row{margin-top:12px;gap:10px}
+  .scan-results-grid{gap:14px}
+  .scan-results-grid .scan-collection-card{padding:15px;border-radius:15px}
+  .scan-results-grid .scan-collection-heading{gap:11px}
+  .scan-collection-pnl{min-width:111px;max-width:46%;margin-left:5px}
+  .scan-collection-pnl strong{font-size:clamp(14px,3.75vw,18px)}
+  .scan-pnl-usd{font-size:.65em}
+  .scan-collection-unpriced .scan-collection-pnl .unknown{font-size:13px}
+  .indexed-collection-grid{margin-top:14px}
+}
+@media(max-width:365px){
+  .scan-collection-pnl{min-width:102px}
+  .scan-results-grid .scan-collection-image{width:49px;height:49px;min-width:49px}
+}
