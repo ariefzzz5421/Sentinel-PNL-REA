@@ -14,61 +14,116 @@ function ethLabel(value: string | null): string {
   return Number.isFinite(n) ? (n > 0 ? "+" : "") + n.toFixed(4) + " ETH" : "Unknown";
 }
 
+type OverallMetrics = ReturnType<typeof summarizeOverallWalletPnl>;
+type RenderAssets = { profile: HTMLImageElement | null; logo: HTMLImageElement | null };
+
+async function loadCardImage(source: string | null): Promise<HTMLImageElement | null> {
+  if (!source) return null;
+  try {
+    const url = new URL(source, window.location.origin);
+    // Prevent data/javascript URLs or non-secure remote images tainting a PNG.
+    if (url.origin !== window.location.origin && url.protocol !== "https:") return null;
+    const image = new window.Image();
+    image.crossOrigin = "anonymous";
+    image.src = url.href;
+    await Promise.race([
+      image.decode(),
+      new Promise<never>((_, reject) => window.setTimeout(
+        () => reject(new Error("Image decode timeout")), 3500)),
+    ]);
+    return image;
+  } catch {
+    // A remote provider may disallow canvas CORS; render a stable avatar fallback.
+    return null;
+  }
+}
+async function loadCardAssets(avatarUrl: string | null): Promise<RenderAssets> {
+  const [profile, logo] = await Promise.all([
+    loadCardImage(avatarUrl), loadCardImage("/sentinel-logo.svg"),
+  ]);
+  return { profile, logo };
+}
 function drawOverallCard(
   canvas: HTMLCanvasElement, name: string, address: string | null,
-  metrics: ReturnType<typeof summarizeOverallWalletPnl>,
-  spot: EthUsdSpot | null, partial: boolean,
+  metrics: OverallMetrics, spot: EthUsdSpot | null, assets: RenderAssets,
 ) {
-  canvas.width = 1000;
-  canvas.height = 1200;
+  const W = 1000, H = 1000;
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not available.");
-  const bg = ctx.createLinearGradient(0, 0, 1000, 1200);
-  bg.addColorStop(0, "#0b0b1b"); bg.addColorStop(1, "#231333");
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, 1000, 1200);
-  ctx.strokeStyle = "#76549d"; ctx.lineWidth = 3;
-  ctx.strokeRect(26, 26, 948, 1148);
+  ctx.textBaseline = "alphabetic";
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#0c0a1a");
+  bg.addColorStop(1, "#20142e");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#695083";
+  ctx.strokeRect(26, 26, W - 52, H - 52);
 
-  const line = (y: number) => {
-    ctx.strokeStyle = "#443350"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(62, y); ctx.lineTo(938, y); ctx.stroke();
+  const text = (label: string, x: number, y: number, size: number,
+    color: string, weight = 700, width?: number, align: CanvasTextAlign = "left") => {
+    ctx.font = weight + " " + size + 'px "Space Grotesk", Arial, sans-serif';
+    ctx.textAlign = align;
+    ctx.fillStyle = color;
+    ctx.fillText(label, x, y, width);
   };
-  const left = (text: string, y: number, size = 26, color = "#c5bdd7") => {
-    ctx.textAlign = "left"; ctx.fillStyle = color;
-    ctx.font = "600 " + size + "px Arial, sans-serif";
-    ctx.fillText(text, 68, y, 870);
+  const rule = (y: number) => {
+    ctx.beginPath();
+    ctx.strokeStyle = "#453451";
+    ctx.moveTo(70, y);
+    ctx.lineTo(930, y);
+    ctx.stroke();
   };
-  const right = (text: string, y: number, color = "#f7f0ff") => {
-    ctx.textAlign = "right"; ctx.fillStyle = color;
-    ctx.font = "bold 31px monospace"; ctx.fillText(text, 922, y, 445);
-  };
-  left("SENTINEL / WALLET PNL", 100, 26, "#b293f3");
-  left("OVERALL REALIZED PERFORMANCE", 155, 22, "#8c82a2");
-  left(safeCardName(name, address || "Multiple wallets"), 236, 52, "#f6f2ff");
-  left(address || "Multiple public wallets", 291, 21, "#aea3c3");
-  line(335);
+  // OpenSea PFP: preserve aspect ratio with a rounded image crop.
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(70, 88, 126, 126, 24);
+  ctx.clip();
+  ctx.fillStyle = "#302345";
+  ctx.fillRect(70, 88, 126, 126);
+  if (assets.profile) {
+    const photo = assets.profile;
+    const scale = Math.max(126 / photo.naturalWidth, 126 / photo.naturalHeight);
+    const w = photo.naturalWidth * scale;
+    const h = photo.naturalHeight * scale;
+    ctx.drawImage(photo, 70 + (126 - w) / 2, 88 + (126 - h) / 2, w, h);
+  } else {
+    text(name.slice(0, 1).toUpperCase() || "?", 133, 168, 64, "#c6a9ef", 800, 120, "center");
+  }
+  ctx.restore();
+  // Use the project's actual logo asset; no artificial Sentinel heading.
+  if (assets.logo) ctx.drawImage(assets.logo, 867, 84, 58, 61);
+  ctx.font = '800 47px "Space Grotesk", Arial, sans-serif';
+  text(safeCardName(name, address || "Multiple wallets"), 225, 156, 47, "#f7f1ff", 800, 600);
+  const addressLabel = address || "Multiple public wallets";
+  text(addressLabel, 227, 202, 21, "#a9a0be", 500, 680);
+  rule(264);
 
-  left("MATCHED REALIZED PNL · ETH/WETH", 403, 24);
-  const raw = metrics.realizedEth;
-  const positive = raw !== null && Number(raw) >= 0;
-  const pnlColor = raw === null ? "#b9afcd" : positive ? "#33deb0" : "#fd8399";
-  left(ethLabel(raw), 480, 58, pnlColor);
-  const usd = formatEthPnlUsd(raw, spot);
-  left(usd ? "(" + usd + ") · CURRENT ETH/USD SPOT" : "USD spot unavailable", 530, 26, pnlColor);
-  line(580);
+  text("REALIZED PNL • ETH", 72, 325, 26, "#c2abd8", 800);
+  const pnl = ethLabel(metrics.realizedEth);
+  const usd = formatEthPnlUsd(metrics.realizedEth, spot);
+  const negative = metrics.realizedEth !== null && Number(metrics.realizedEth) < 0;
+  const positive = metrics.realizedEth !== null && !negative;
+  const pnlColor = metrics.realizedEth === null ? "#bbb0ce" : positive ? "#39dbb2" : "#ff8ea3";
+  // Same typography and size for the ETH and USD display values.
+  text(pnl, 72, 405, 57, pnlColor, 800, 856);
+  text(usd === null ? "USD unavailable" : "(" + usd + ")", 72, 478, 57,
+    usd === null ? "#9a90ac" : pnlColor, 800, 856);
+  rule(532);
 
-  left("BOUGHT", 650); right(String(metrics.bought), 650);
-  left("SOLD", 717); right(String(metrics.sold), 717);
-  left("MATCHED SALES", 784); right(String(metrics.matchedSales), 784);
-  left("UNKNOWN BASIS SALES", 851); right(String(metrics.unknownBasisSales), 851);
-  left("PRICED COLLECTIONS", 918); right(String(metrics.collections), 918);
-  line(958);
-  left("NETWORKS: ETH · BASE · ARB · RH", 1006, 23, "#62cffa");
-  left("Matching only. Ink/Arc and unverified prices excluded.", 1050, 19);
-  left(partial || metrics.estimatedSales > 0
-    ? "Estimated · partial history or fees may be missing"
-    : "Based on matched transactions in available indexed history", 1090, 18);
-  left("USD = current spot value, not historical trade-time profit.", 1123, 18);
+  const stats = [
+    ["BOUGHT", metrics.bought],
+    ["SOLD", metrics.sold],
+    ["MATCHED SALES", metrics.matchedSales],
+  ] as const;
+  stats.forEach(([label, count], index) => {
+    const y = 638 + index * 104;
+    text(label, 74, y, 32, "#b7aac8", 800);
+    text(count.toLocaleString("en-US"), 924, y, 38, "#fff9ff", 800, 330, "right");
+    if (index < stats.length - 1) rule(y + 39);
+  });
 }
 
 export function WalletOverallCard({ events, wallet, partial, spot }: {
@@ -115,9 +170,13 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
 
   useEffect(() => {
     if (!expanded || !canvas.current) return;
-    try { drawOverallCard(canvas.current, name, wallet, summary, spot, partial); }
-    catch { /* The export action surfaces canvas errors to the user. */ }
-  }, [expanded, name, wallet, summary, spot, partial]);
+    let active = true;
+    const target = canvas.current;
+    void loadCardAssets(avatarUrl).then(assets => {
+      if (active) drawOverallCard(target, name, wallet, summary, spot, assets);
+    }).catch(() => { /* Export action surfaces graphics errors. */ });
+    return () => { active = false; };
+  }, [expanded, name, wallet, summary, spot, avatarUrl]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -133,7 +192,8 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
     if (!target) return;
     setNotice(""); setExporting(true);
     try {
-      drawOverallCard(target, name, wallet, summary, spot, partial);
+      const assets = await loadCardAssets(avatarUrl);
+      drawOverallCard(target, name, wallet, summary, spot, assets);
       const blob = await new Promise<Blob>((resolve, reject) => target.toBlob(
         image => image ? resolve(image) : reject(new Error("PNG export failed.")), "image/png"));
       const filename = "sentinel-overall-" +
@@ -155,7 +215,7 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
     } finally { setExporting(false); }
   }
   function shareX() {
-    const post = name + " · Matched NFT PnL " + pnl +
+    const post = name + " · Realized NFT PnL " + pnl +
       (usd ? " (" + usd + " at current ETH/USD)" : "") +
       " · Estimated, partial on-chain history · via Sentinel NFT PnL";
     window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(post), "_blank", "noopener,noreferrer");
@@ -177,8 +237,8 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
       <div className="wallet-overall-money" title="Matched ETH/WETH realized PnL, with incomplete history/fees possible">
         <strong className={summary.realizedEth === null ? "unknown" :
           Number(summary.realizedEth) < 0 ? "negative" : "positive"}>{pnl}</strong>
-        <span>{usd ? "(" + usd + ")" : "(USD unavailable)"} <small>spot</small></span>
-        <small>{summary.matchedSales} matched sales · {summary.unknownBasisSales} unknown basis</small>
+        <span>{usd ? "(" + usd + ")" : "USD unavailable"}</span>
+        <small>{summary.matchedSales} matched sales</small>
       </div>
       <div className="wallet-overall-actions">
         <button type="button" onClick={() => { setNotice(""); setExpanded(true); }}>
