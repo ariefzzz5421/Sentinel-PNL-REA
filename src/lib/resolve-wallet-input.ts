@@ -2,7 +2,7 @@ import { addressSchema } from "@/lib/schema";
 import type { ScanChain } from "@/lib/scan-chains";
 
 /** Resolve ENS on the server before passing canonical addresses to the scan API. */
-export async function resolveWalletInput(text: string, chain: ScanChain): Promise<{ addresses: string[]; description: string }> {
+export async function resolveWalletInput(text: string, chain: ScanChain): Promise<{ addresses: string[]; description: string; ensCount: number }> {
   const items = [...new Set(text.split(/[\s,;]+/).map((part) => part.trim()).filter(Boolean))];
   if (!items.length) throw new Error("Enter a wallet address or ENS name.");
   if (items.length > 100) throw new Error("Use at most 100 wallets per scan.");
@@ -26,5 +26,5 @@ export async function resolveWalletInput(text: string, chain: ScanChain): Promis
     return address.toLowerCase();
   }))];
   const fallback = resolved.filter((item) => item.record === "ethereum").length;
-  return { addresses, description: resolved.length ? `Resolved ${resolved.length} ENS name(s) on Ethereum${fallback && chain !== "ethereum" ? `; ${fallback} used Ethereum address records` : ""}.` : "" };
+  return { addresses, ensCount: resolved.length, description: resolved.length ? `Resolved ${resolved.length} ENS name(s) on Ethereum${fallback && chain !== "ethereum" ? `; ${fallback} used Ethereum address records` : ""}.` : "" };
 }

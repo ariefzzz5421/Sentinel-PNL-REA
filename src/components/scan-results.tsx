@@ -7,6 +7,7 @@ import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
 import type { AutoScanNetworkStatus } from "@/lib/automatic-scan";
+import { scanChainById } from "@/lib/scan-chains";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -79,8 +80,8 @@ function downloadCsv(rows: CollectionRow[]) {
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(href);
 }
 export function ScanResults({
-  events, holdings, holdingsComplete, partial, warning, address, networkStatuses = [],
-}: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null;
+  events, holdings, holdingsComplete, partial, address, networkStatuses = [],
+}: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; address: string | null;
   networkStatuses?: AutoScanNetworkStatus[] }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -105,14 +106,16 @@ export function ScanResults({
     return () => document.removeEventListener("keydown", handleKey);
   }, [activeKey]);
 
-  return <section className="scan-results" aria-label="NFT collection scan results">
+  return <section className="scan-results" aria-label={partial ? "NFT collection scan results; history may be incomplete" : "NFT collection scan results"}>
     {networkStatuses.length > 0 && <div className="scan-network-status" aria-label="Automatically scanned networks">
       {networkStatuses.map(item => <span key={item.chain}
         className={item.failed ? item.checked ? "partial" : "failed" : "checked"}
-        title={item.checked + " successful, " + item.failed + " failed wallet requests"}>
-        <span aria-hidden="true">{item.failed ? item.checked ? "◐" : "!" : "✓"}</span>
-        {item.chain === "ethereum" ? "ETH" : item.chain === "arbitrum" ? "ARB" : item.chain === "robinhood" ? "RH" : item.chain === "arc" ? "ARC" : item.chain === "ink" ? "INK" : "Base"}
-        <small>{item.eventCount} {item.coverage === "unpriced-transfers" ? "transfers" : "events"}{item.coverage === "unpriced-transfers" ? " · " + item.holdingCount + " owned · PnL Unknown" : ""}{item.failed ? " · " + item.failed + " failed" : ""}</small>
+        title={item.checked + " successful, " + item.failed + " failed wallet requests; " +
+          (item.coverage === "unpriced-transfers" ? "unpriced NFT transfer activity" : "NFT trades")}>
+        <Image src={scanChainById(item.chain).icon} width={19} height={19} alt=""
+          aria-hidden="true" className="scan-network-chain-icon"/>
+        <span className="scan-network-label">{scanChainById(item.chain).label}</span>
+        <small>{item.failed > 0 && item.checked === 0 ? "—" : item.eventCount} events</small>
       </span>)}
     </div>}
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">
@@ -122,8 +125,6 @@ export function ScanResults({
       <span className="scan-result-total">{rows.length} collections</span>
       <button type="button" onClick={() => downloadCsv(shown)} className="scan-results-export"><Download size={16}/> CSV</button>
     </div>
-    {partial && <details className="scan-result-method"><summary><Info size={14}/> Estimated results · some history unavailable <span>Details</span></summary>
-      <p>{warning || "Fees, mints, transfers and unmatched sales may change realized PnL."}</p></details>}
     {shown.length ? <div className="scan-results-grid">
       {shown.map((row) => <article className="scan-collection-card" key={row.key}>
         <button type="button" className="scan-card-open" onClick={() => { setActiveKey(row.key); setCardFont("oswald"); }}
@@ -132,9 +133,9 @@ export function ScanResults({
             {row.image
               ? <Image src={row.image} width={66} height={66} alt="" unoptimized className="scan-collection-image"/>
               : <div className="scan-collection-image scan-collection-placeholder"><Images size={24}/></div>}
-            <div className="scan-collection-title"><strong>{row.name}</strong><span>● {row.chain.toUpperCase()}</span></div>
+            <div className="scan-collection-title"><strong>{row.name}</strong><span className="scan-collection-chain"><Image src={scanChainById(row.chain).icon} width={17} height={17} alt="" aria-hidden="true"/>{row.chain.toUpperCase()}</span></div>
             <div className="scan-collection-pnl"><strong className={row.pnl === null ? "unknown" : Number(row.pnl) >= 0 ? "positive" : "negative"}>{formatEth(row.pnl)}</strong>
-              <small>ETH PNL · est.</small></div>
+              <small>ETH PNL</small></div>
           </div>
           <div className="scan-collection-stats">
             <div><span>BOUGHT</span><strong>{row.bought}</strong></div>
