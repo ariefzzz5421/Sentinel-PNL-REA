@@ -18,6 +18,7 @@ const allowedPageKeys = new Set([
   "block_number", "index", "items_count", "batch_log_index",
   "batch_block_hash", "batch_transaction_hash", "index_in_batch",
   "transaction_hash", "token_id", "unique_token",
+  "token_contract_address_hash", "token_type",
 ]);
 const cache = new Map<string, { expires: number; value: unknown }>();
 
@@ -150,7 +151,8 @@ function transferAssets(raw: unknown, wallet: string, origin: string,
     output.push({
       id: tx.toLowerCase() + ":" + logIndex + ":" + tokenAddress + ":" + tokenIdValue + ":" + direction,
       name: collection + " #" + tokenIdValue,
-      collection, imageUrl: null,
+      collection, contract: tokenAddress, tokenId: tokenIdValue,
+      imageUrl: imageUrl(object(item.token_instance)?.image_url) || imageUrl(object(item.token_instance)?.metadata && object(object(item.token_instance)?.metadata)?.image),
       kind: direction,
       url: origin + "/tx/" + tx.toLowerCase(),
     });
@@ -172,7 +174,7 @@ function heldAsset(raw: unknown, wallet: string, origin: string,
   return {
     id: origin + ":" + contract + ":" + id,
     name: truncate(metadata?.name, collection + " #" + id),
-    collection,
+    collection, contract, tokenId: id,
     imageUrl: imageUrl(item.image_url) || imageUrl(metadata?.image),
     url: origin + "/token/" + contract + "/instance/" + encodeURIComponent(id),
     kind: "holding",

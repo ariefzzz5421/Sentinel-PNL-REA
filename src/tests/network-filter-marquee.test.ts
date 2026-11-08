@@ -46,7 +46,8 @@ describe("network badge filters: default all, selected chain only, reset without
     expect(results).toContain("aria-pressed={selectedChain === item.chain}");
     expect(results).toContain('onChainSelect?.(selectedChain === item.chain ? null : item.chain)');
     expect(results).toContain("filterNetworkItems(events, selectedChain)");
-    expect(scanner).toContain("filterNetworkItems(evmDiscoveries, selectedChain)");
+    expect(scanner).toContain("unpricedDiscoveries={evmDiscoveries}");
+    expect(results).toContain("filterNetworkItems(unpricedDiscoveries, selectedChain)");
     expect(scanner).toContain("setSelectedChain(null)");
   });
 
