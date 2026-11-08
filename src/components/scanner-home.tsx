@@ -6,6 +6,7 @@ import { ArrowRight, CircleHelp, FileInput, ScanSearch } from "lucide-react";
 import { addressSchema, eventsSchema, type TradeEvent } from "@/lib/schema";
 import { autoPricedChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoEvmChain, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChains } from "@/lib/scan-chains";
+import { filterNetworkItems } from "@/lib/network-filter";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
 import { ScanResults, type PublicHolding } from "@/components/scan-results";
@@ -211,7 +212,7 @@ export function ScannerHome() {
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
           ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} networkStatuses={networkStatuses}
               selectedChain={selectedChain} onChainSelect={setSelectedChain}/>
-            {evmDiscoveries.filter(result => selectedChain === null || result.chain === selectedChain)
+            {filterNetworkItems(evmDiscoveries, selectedChain)
               .map(result => <DiscoveryResults key={result.chain + ":" + result.address} result={result}/>) }</>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
