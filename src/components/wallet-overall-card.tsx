@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Share2, Pencil, X, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { Download, Share2, Pencil, X, ExternalLink, ImagePlus, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import type { TradeEvent } from "@/lib/schema";
 import type { EthUsdSpot } from "@/lib/eth-usd-spot";
@@ -20,12 +20,16 @@ type RenderAssets = { profile: HTMLImageElement | null; logo: HTMLImageElement |
 async function loadCardImage(source: string | null): Promise<HTMLImageElement | null> {
   if (!source) return null;
   try {
-    const url = new URL(source, window.location.origin);
-    // Prevent data/javascript URLs or non-secure remote images tainting a PNG.
-    if (url.origin !== window.location.origin && url.protocol !== "https:") return null;
+    // A user-selected raster image is stored locally as a data URL.
+    // Never allow SVG/HTML or arbitrary data URLs in the export canvas.
+    const localRaster = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(source) &&
+      source.length <= 6_000_000;
+    if (source.startsWith("data:") && !localRaster) return null;
+    const url = localRaster ? null : new URL(source, window.location.origin);
+    if (url && url.origin !== window.location.origin && url.protocol !== "https:") return null;
     const image = new window.Image();
     image.crossOrigin = "anonymous";
-    image.src = url.href;
+    image.src = localRaster ? source : url!.href;
     await Promise.race([
       image.decode(),
       new Promise<never>((_, reject) => window.setTimeout(
@@ -136,6 +140,11 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
   const profileName = currentProfile?.name || null;
   const avatarUrl = currentProfile?.avatarUrl || null;
   const [customName, setCustomName] = useState("");
+  const [customAvatar, setCustomAvatar] = useState<{ wallet: string | null; dataUrl: string } | null>(null);
+  const avatarFileInput = useRef<HTMLInputElement>(null);
+  // Do not reuse a custom photo when the user scans a different wallet.
+  const customAvatarUrl = customAvatar?.wallet === wallet ? customAvatar.dataUrl : null;
+  const effectiveAvatarUrl = customAvatarUrl || avatarUrl;
   const [expanded, setExpanded] = useState(false);
   const [notice, setNotice] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -172,11 +181,11 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
     if (!expanded || !canvas.current) return;
     let active = true;
     const target = canvas.current;
-    void loadCardAssets(avatarUrl).then(assets => {
+    void loadCardAssets(effectiveAvatarUrl).then(assets => {
       if (active) drawOverallCard(target, name, wallet, summary, spot, assets);
     }).catch(() => { /* Export action surfaces graphics errors. */ });
     return () => { active = false; };
-  }, [expanded, name, wallet, summary, spot, avatarUrl]);
+  }, [expanded, name, wallet, summary, spot, effectiveAvatarUrl]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -192,7 +201,7 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
     if (!target) return;
     setNotice(""); setExporting(true);
     try {
-      const assets = await loadCardAssets(avatarUrl);
+      const assets = await loadCardAssets(effectiveAvatarUrl);
       drawOverallCard(target, name, wallet, summary, spot, assets);
       const blob = await new Promise<Blob>((resolve, reject) => target.toBlob(
         image => image ? resolve(image) : reject(new Error("PNG export failed.")), "image/png"));
@@ -214,6 +223,33 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
         setNotice(cause instanceof Error ? cause.message : "Unable to export image.");
     } finally { setExporting(false); }
   }
+  function onAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const validTypes = ["image/png", "image/jpeg", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      setNotice("Please choose a PNG, JPG or WebP image.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024 || file.size === 0) {
+      setNotice("PFP must be a non-empty image smaller than 4 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string" ||
+          !reader.result.startsWith("data:" + file.type + ";base64,")) {
+        setNotice("The uploaded image could not be read.");
+        return;
+      }
+      setCustomAvatar({ wallet, dataUrl: reader.result });
+      setNotice("");
+    };
+    reader.onerror = () => setNotice("Could not read the selected PFP.");
+    reader.readAsDataURL(file);
+  }
+
   function shareX() {
     const post = name + " · Realized NFT PnL " + pnl +
       (usd ? " (" + usd + " at current ETH/USD)" : "") +
@@ -260,11 +296,27 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
             onChange={e => setCustomName(e.target.value)}
             placeholder={profileName || fallback}/>
         </label>
-        <p className="wallet-overall-source">
-          {profileName ? "Default name from public OpenSea profile. " : "Default name is the scanned wallet address. "}
-          The label is editable; it does not change ownership or PnL calculation.
-        </p>
-        <div className="studio-rendered wallet-overall-canvas">
+        <div className="wallet-overall-avatar-tools">
+          <div className="wallet-overall-avatar-preview" aria-label="Selected card profile image">
+            {effectiveAvatarUrl
+              ? <Image unoptimized src={effectiveAvatarUrl} width={46} height={46} alt="Card PFP preview"/>
+              : <span>{name.slice(0, 1).toUpperCase()}</span>}
+          </div>
+          <input ref={avatarFileInput} type="file" accept="image/png,image/jpeg,image/webp"
+            className="wallet-overall-avatar-input" aria-label="Choose a custom profile image"
+            onChange={onAvatarUpload}/>
+          <button type="button" className="wallet-overall-avatar-button"
+            onClick={() => avatarFileInput.current?.click()}>
+            <ImagePlus size={17}/> {customAvatarUrl ? "Change PFP" : "Upload PFP"}
+          </button>
+          {customAvatarUrl && <button type="button" className="wallet-overall-avatar-reset"
+            onClick={() => { setCustomAvatar(null); setNotice(""); }}
+            aria-label="Reset to OpenSea profile image">
+            <RotateCcw size={15}/> Reset
+          </button>}
+        </div>
+        <div className="studio-rendered wallet-overall-canvas"
+          title="Matched priced sales only. Fees, partial history and missing basis can affect realized PnL. USD uses current ETH spot, not trade-time FX.">
           <canvas ref={canvas} aria-label="Overall wallet PnL PNG preview"/>
         </div>
         <div className="wallet-overall-export">
@@ -276,10 +328,6 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
           </button>
           <button type="button" onClick={shareX}>Share on X</button>
         </div>
-        <p className="wallet-overall-source">
-          Only matched sale prices are included; gas/fees may be missing. Ink/Arc pricing,
-          unmatched trades and unpriced holdings are excluded. USD uses live spot, not historical FX.
-        </p>
         {notice && <p className="studio-notice" role="status">{notice}</p>}
       </div>
     </div>}
