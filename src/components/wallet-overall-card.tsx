@@ -282,6 +282,19 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
           <Share2 size={17}/> Overall PnL Card <ExternalLink size={15}/>
         </button>
       </div>
+      <details className="wallet-overall-audit">
+        <summary>Verify PnL calculation</summary>
+        <div className="wallet-overall-audit-grid">
+          <span>Matched sale profits</span><strong>{summary.grossProfitsEth} ETH</strong>
+          <span>Matched sale losses</span><strong>-{summary.grossLossesEth} ETH</strong>
+          <span>Net realized PnL</span><strong>{summary.realizedEth ?? "Unknown"} ETH</strong>
+          <span>Matched sales</span><strong>{summary.matchedSales}</strong>
+          <span>Unmatched sale basis</span><strong>{summary.unknownBasisSales}</strong>
+        </div>
+        <small>{summary.netReconciled
+          ? "Reconciled with the scan ledger. Only matched ETH/WETH sales; missing gas/fees or history can affect the total."
+          : "Ledger reconciliation failed; the net amount is withheld."} USD conversions use current spot, not historical FX.</small>
+      </details>
     </section>
     {expanded && <div className="scan-modal-backdrop" role="presentation"
       onMouseDown={e => { if (e.target === e.currentTarget) setExpanded(false); }}>

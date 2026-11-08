@@ -5,6 +5,7 @@ import { ArrowLeft, Download, ImagePlus, Share2 } from "lucide-react";
 import type { CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain } from "@/lib/schema";
 import { scanChainById } from "@/lib/scan-chains";
+import { parseEthUsdSpot } from "@/lib/eth-usd-spot";
 
 export type StudioCollection = {
   name: string; chain: Chain; bought: number; sold: number; minted: number; transfersIn: number; held: number | null;
@@ -106,13 +107,9 @@ export function PnlCardStudio({ row, wallet, partial, onBack, onFontChange }: {
       try {
         const response = await fetch("/api/market/eth-usd", { cache: "no-store" });
         if (!response.ok) throw new Error("FX feed offline");
-        const data: unknown = await response.json();
-        if (!data || typeof data !== "object" || !("usd" in data) || typeof data.usd !== "number"
-          || !Number.isFinite(data.usd) || data.usd <= 0) throw new Error("Invalid FX quote");
-        const timestamp = "updatedAt" in data && typeof data.updatedAt === "string" ? data.updatedAt : null;
-        if (!timestamp || Number.isNaN(Date.parse(timestamp)) ||
-          Math.abs(Date.now() - Date.parse(timestamp)) > 10 * 60_000) throw new Error("Stale FX quote");
-        if (active) { setQuote(data.usd); setQuoteAt(timestamp); }
+        const spot = parseEthUsdSpot(await response.json());
+        if (!spot) throw new Error("Missing, stale or malformed FX quote");
+        if (active) { setQuote(spot.usd); setQuoteAt(spot.updatedAt); }
       } catch {
         if (active) { setQuote(null); setQuoteAt(null); }
       }
