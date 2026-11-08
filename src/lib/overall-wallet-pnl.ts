@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import type { Chain, TradeEvent } from "./schema";
 import { calculatePnl } from "./pnl/calculate";
 
@@ -44,7 +45,7 @@ export function summarizeOverallWalletPnl(
   // Use exactly the curated source calculation (same as per-collection cards).
   // No extra price/fee inference or recomputation in the share-card renderer.
   return {
-    realizedEth: matchedSales ? Number(summary.realizedEth).toFixed(8) : null,
+    realizedEth: matchedSales ? new Decimal(summary.realizedEth).toFixed(8) : null,
     matchedSales,
     unknownBasisSales: summary.unknownBasisSales,
     estimatedSales: summary.estimatedSales,
