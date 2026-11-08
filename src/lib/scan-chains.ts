@@ -4,10 +4,10 @@ export const scanChains = [
   { id: "base", label: "Base", chainId: 8453, currency: "ETH", scanReady: true, icon: "/chains/base-user.svg" },
   { id: "arbitrum", label: "ARB", chainId: 42161, currency: "ETH", scanReady: true, icon: "/chains/arbitrum.svg" },
   { id: "robinhood", label: "RH", chainId: 4663, currency: "ETH", scanReady: true, icon: "/chains/robinhood.png" },
-  { id: "arc", label: "ARC", chainId: 5042, currency: "USDC", scanReady: false, icon: "/chains/arc.png", unavailableReason: "Arc requires USDC-native NFT PnL accounting; scanning is not supported yet." },
+  { id: "arc", label: "ARC", chainId: 5042, currency: "USDC", scanReady: false, discoveryReady: true, icon: "/chains/arc.png", unavailableReason: "Arc mainnet is auto-scanned for unpriced NFT ownership and transfers. USDC PnL is Unknown without confirmed sale pricing." },
   // Solana uses base58 addresses and a different transaction/indexing model, not EVM chain IDs.
   { id: "solana", label: "SOL", chainId: null, currency: "SOL", scanReady: false, discoveryReady: true, icon: "/chains/solana.svg", unavailableReason: "Solana holdings discovery is available. Historical NFT sale PnL is not indexed yet." },
-  { id: "ink", label: "INK", chainId: 57073, currency: "ETH", scanReady: false, discoveryReady: true, icon: "/chains/ink.svg", unavailableReason: "Ink: recent NFT transfer discovery is available with a collection contract. Historical sale PnL requires an indexer." },
+  { id: "ink", label: "INK", chainId: 57073, currency: "ETH", scanReady: false, discoveryReady: true, icon: "/chains/ink.svg", unavailableReason: "Ink mainnet is auto-scanned for unpriced NFT ownership and transfers without a contract. Historical NFT sale PnL remains Unknown." },
   { id: "bitcoin", label: "BTC", chainId: null, currency: "BTC", scanReady: false, discoveryReady: true, icon: "/chains/bitcoin.svg", unavailableReason: "Bitcoin Ordinals: read-only holdings and transfer scanning; verified sale PnL needs an ORD.NET server session." },
 ] as const;
 
