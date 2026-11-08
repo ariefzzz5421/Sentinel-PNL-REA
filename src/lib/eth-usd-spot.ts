@@ -9,7 +9,7 @@ export function parseEthUsdSpot(input: unknown, now = Date.now()): EthUsdSpot | 
   const timestamp = Date.parse(raw.updatedAt);
   if (!Number.isFinite(timestamp) || timestamp > now + 60_000 ||
       now - timestamp > 10 * 60_000) return null;
-  return { usd: raw.usd, updatedAt: raw.updatedAt, source: "CoinGecko" };
+  return { usd: raw.usd, updatedAt: raw.updatedAt, source: raw.source };
 }
 export function formatEthPnlUsd(
   ethPnl: string | null, spot: EthUsdSpot | null,
