@@ -236,3 +236,12 @@ A successful API response with **zero supported events** does not establish that
 - **Safety**: holdings are labeled Owned, transfer events Received/Sent. Neither on-chain token transfers nor Arc's USDC-native gas amounts are assumed to be sales or ETH prices. Realized/unrealized PnL and ROI for these chains are **Unknown** until verified marketplace pricing and currency-specific accounting are implemented.
 - **Failure isolation**: if an indexer is rate limited or unavailable, its network status reports an error while successful ETH/Base/ARB/RH results remain visible. A successful response with no assets is labeled a bounded indexing result, not proof of no trades.
 - **Source APIs**: https://docs.inkonchain.com/tools/block-explorers · https://explorer.inkonchain.com · https://explorer.arc.io · https://github.com/blockscout/blockscout-api-v2-swagger
+
+
+### Live USD NFT PnL labels and Ink collection cards
+
+- The results card now annotates each supported **ETH-denominated** realized PnL with its USD equivalent at the **current CoinGecko ETH/USD spot quote** returned by `/api/market/eth-usd`. This is not the historical USD profit at execution time. Source and timestamp are checked, quotes older than 10 minutes are rejected, and unavailable quotes render `(—)` rather than a fake estimate. The existing exportable PnL canvas already uses the same live FX endpoint.
+- **Ink and Arc** indexed ERC-721/1155 activity is grouped by contract in the existing collection card layout, rather than a separate verbose raw transfer grid. Each card shows Received, Sent, Owned and `PnL Unknown` because Blockscout token transfers alone do not prove a purchase or a sale. Collection art is used only when indexed metadata provides a safe HTTPS URL.
+- Selecting Ink/Arc and finding no indexed NFT assets shows **Not Found**; an unavailable provider shows **Indexer unavailable**, which is distinct from a legitimate empty result. Neither implies complete historic coverage.
+- Blockscout wallet NFT pagination now accepts the official `token_contract_address_hash` and `token_type` cursor fields. ETH/Base/ARB/RH sale matching remains unchanged; Ink/Arc transfers do not enter their financial calculations.
+- Mobile scan inputs and collection cards have additional padding and gaps, with responsive sizing for a signed native ETH value plus a small USD label.
