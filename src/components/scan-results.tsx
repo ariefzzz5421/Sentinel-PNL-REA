@@ -108,7 +108,9 @@ export function ScanResults({
         if (!spot) throw new Error("ETH/USD quote is stale or malformed.");
         if (active) setEthUsdSpot(spot);
       } catch {
-        if (active) setEthUsdSpot(null);
+        // A brief rate-limit must not wipe a still-fresh, previously verified quote.
+        if (active) setEthUsdSpot(previous =>
+          previous ? parseEthUsdSpot(previous) : null);
       }
     };
     void update();
