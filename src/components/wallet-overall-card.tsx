@@ -75,8 +75,11 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
   events: TradeEvent[]; wallet: string | null; partial: boolean; spot: EthUsdSpot | null;
 }) {
   const summary = useMemo(() => summarizeOverallWalletPnl(events, wallet), [events, wallet]);
-  const [profileName, setProfileName] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profile, setProfile] = useState<{ wallet: string; name: string | null; avatarUrl: string | null } | null>(null);
+  // Async responses from an old scan must never label a different wallet.
+  const currentProfile = profile?.wallet.toLowerCase() === wallet?.toLowerCase() ? profile : null;
+  const profileName = currentProfile?.name || null;
+  const avatarUrl = currentProfile?.avatarUrl || null;
   const [customName, setCustomName] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [notice, setNotice] = useState("");
@@ -90,8 +93,6 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
   // Public account lookup is optional and NEVER controls financial matching.
   useEffect(() => {
     let active = true;
-    setProfileName(null);
-    setAvatarUrl(null);
     if (!wallet) return;
     void (async () => {
       try {
@@ -106,10 +107,7 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
           ? fields.username : typeof fields.displayName === "string" ? fields.displayName : null;
         const image = typeof fields.avatar === "string" && fields.avatar.startsWith("https://")
           ? fields.avatar : null;
-        if (active) {
-          setProfileName(label ? safeCardName(label, wallet) : null);
-          setAvatarUrl(image);
-        }
+        if (active) setProfile({ wallet, name: label ? safeCardName(label, wallet) : null, avatarUrl: image });
       } catch { /* Wallet address remains a valid display fallback. */ }
     })();
     return () => { active = false; };
@@ -118,7 +116,7 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
   useEffect(() => {
     if (!expanded || !canvas.current) return;
     try { drawOverallCard(canvas.current, name, wallet, summary, spot, partial); }
-    catch { setNotice("Unable to render overall PnL preview."); }
+    catch { /* The export action surfaces canvas errors to the user. */ }
   }, [expanded, name, wallet, summary, spot, partial]);
 
   useEffect(() => {
