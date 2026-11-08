@@ -9,6 +9,10 @@ import type { Chain, TradeEvent } from "@/lib/schema";
 import type { AutoEvmChain, AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChainById } from "@/lib/scan-chains";
 import { filterNetworkItems } from "@/lib/network-filter";
+import type { DiscoveryResult } from "@/lib/nft-discovery";
+import { groupIndexedEvmCollections } from "@/lib/indexed-evm-collections";
+import { IndexedEvmCollectionCards } from "@/components/indexed-evm-collection-cards";
+import { parseEthUsdSpot, formatEthPnlUsd, type EthUsdSpot } from "@/lib/eth-usd-spot";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -81,15 +85,39 @@ function downloadCsv(rows: CollectionRow[]) {
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(href);
 }
 export function ScanResults({
-  events, holdings, holdingsComplete, partial, address, networkStatuses = [], selectedChain = null, onChainSelect,
+  events, holdings, holdingsComplete, partial, address, networkStatuses = [], selectedChain = null, onChainSelect, unpricedDiscoveries = [],
 }: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; address: string | null;
   networkStatuses?: AutoScanNetworkStatus[];
   selectedChain?: AutoEvmChain | null;
-  onChainSelect?: (next: AutoEvmChain | null) => void }) {
+  onChainSelect?: (next: AutoEvmChain | null) => void;
+  unpricedDiscoveries?: DiscoveryResult[] }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [cardFont, setCardFont] = useState<FontChoice>("oswald");
+  const [ethUsdSpot, setEthUsdSpot] = useState<EthUsdSpot | null>(null);
+  useEffect(() => {
+    let active = true;
+    const update = async () => {
+      try {
+        const response = await fetch("/api/market/eth-usd", { cache: "no-store" });
+        if (!response.ok) throw new Error("ETH/USD feed unavailable.");
+        const spot = parseEthUsdSpot(await response.json());
+        if (!spot) throw new Error("ETH/USD quote is stale or malformed.");
+        if (active) setEthUsdSpot(spot);
+      } catch {
+        if (active) setEthUsdSpot(null);
+      }
+    };
+    void update();
+    const interval = window.setInterval(() => void update(), 90_000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, []);
   const unpricedChain = selectedChain === "arc" || selectedChain === "ink";
+  const indexedCollections = useMemo(() => groupIndexedEvmCollections(
+    filterNetworkItems(unpricedDiscoveries, selectedChain)),
+    [unpricedDiscoveries, selectedChain]);
+  const selectedIndexerFailed = networkStatuses.some(item => item.chain === selectedChain &&
+    item.failed > 0 && item.checked === 0);
   const rows = useMemo(() => collectionRows(
     filterNetworkItems(events, selectedChain).filter(event =>
       address === null || event.wallet.toLowerCase() === address.toLowerCase()),
@@ -103,6 +131,9 @@ export function ScanResults({
     return [...rows].sort((a, b) => b.latest.localeCompare(a.latest));
   }, [filter, rows]);
   const selected = rows.find((row) => row.key === activeKey) || null;
+  const indexedShown = filter === "best" && !unpricedChain ? [] :
+    filter === "holding" && !unpricedChain
+      ? indexedCollections.filter(row => row.owned > 0) : indexedCollections;
 
   useEffect(() => {
     if (!activeKey) return;
@@ -138,7 +169,7 @@ export function ScanResults({
       <button type="button" aria-pressed={filter === "recent"} className={filter === "recent" ? "active" : ""} onClick={() => setFilter("recent")}>Recent</button>
       <button type="button" aria-pressed={filter === "best"} className={filter === "best" ? "active" : ""} onClick={() => setFilter("best")}>Best PNL</button>
       <button type="button" aria-pressed={filter === "holding"} className={filter === "holding" ? "active" : ""} onClick={() => setFilter("holding")}>Holding</button>
-      <span className="scan-result-total">{rows.length} collections</span>
+      <span className="scan-result-total">{rows.length + indexedCollections.length} collections</span>
       <button type="button" onClick={() => downloadCsv(shown)} className="scan-results-export"><Download size={16}/> CSV</button>
     </div>
     {shown.length ? <div className="scan-results-grid">
@@ -150,8 +181,17 @@ export function ScanResults({
               ? <Image src={row.image} width={66} height={66} alt="" unoptimized className="scan-collection-image"/>
               : <div className="scan-collection-image scan-collection-placeholder"><Images size={24}/></div>}
             <div className="scan-collection-title"><strong>{row.name}</strong><span className="scan-collection-chain"><Image src={scanChainById(row.chain).icon} width={17} height={17} alt="" aria-hidden="true"/>{row.chain.toUpperCase()}</span></div>
-            <div className="scan-collection-pnl"><strong className={row.pnl === null ? "unknown" : Number(row.pnl) >= 0 ? "positive" : "negative"}>{formatEth(row.pnl)}</strong>
-              <small>ETH PNL</small></div>
+            <div className="scan-collection-pnl" title={ethUsdSpot
+              ? "USD converted at current CoinGecko ETH spot (" + ethUsdSpot.updatedAt + "), not the historical trade rate."
+              : "Live ETH/USD rate unavailable; no USD value inferred."}>
+              <strong className={row.pnl === null ? "unknown" : Number(row.pnl) >= 0 ? "positive" : "negative"}>
+                {formatEth(row.pnl)}
+                {row.pnl !== null && <span className="scan-pnl-usd">
+                  {" (" + (formatEthPnlUsd(row.pnl, ethUsdSpot) ?? "—") + ")"}
+                </span>}
+              </strong>
+              <small>ETH PNL</small>
+            </div>
           </div>
           <div className="scan-collection-stats">
             <div><span>BOUGHT</span><strong>{row.bought}</strong></div>
@@ -163,11 +203,17 @@ export function ScanResults({
           <Share2 size={14}/> PnL card <ArrowUpRight size={13}/>
         </button>
       </article>)}
-    </div> : <div className="scan-results-empty"><Info size={20}/><p>{filter === "best" ? "No matched sales to rank in the available data." :
+    </div> : indexedShown.length === 0 && <div className="scan-results-empty"><Info size={20}/><p>{filter === "best" ? "No matched sales to rank in the available data." :
       filter === "holding" ? "No current owned collections returned by OpenSea." : "No supported priced NFT trades found."}</p></div>}
     </>}
-    {unpricedChain && networkStatuses.some(item => item.chain === selectedChain && item.failed > 0 && item.checked === 0) &&
-      <div className="scan-results-empty" role="status">This network indexer was unavailable during the scan. Select All Chains to see other results.</div>}
+    <IndexedEvmCollectionCards rows={indexedShown}/>
+    {unpricedChain && indexedShown.length === 0 &&
+      <div className="scan-results-empty" role="status">
+        {selectedIndexerFailed ? "Indexer unavailable" : "Not Found"}
+        <p>{selectedIndexerFailed
+          ? "The network indexer could not complete this scan."
+          : "No indexed NFT holdings or transfers found in the available scan window."}</p>
+      </div>}
 
     {selected && <div className="scan-modal-backdrop" role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setActiveKey(null);
