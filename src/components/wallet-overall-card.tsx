@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Share2, Pencil, X, ExternalLink } from "lucide-react";
+import Image from "next/image";
 import type { TradeEvent } from "@/lib/schema";
 import type { EthUsdSpot } from "@/lib/eth-usd-spot";
 import { formatEthPnlUsd } from "@/lib/eth-usd-spot";
@@ -166,7 +167,7 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
     <section className="wallet-overall-summary" aria-label="Overall matched NFT PnL for scanned wallet">
       <div className="wallet-overall-identity">
         <div className="wallet-overall-avatar" aria-hidden="true">
-          {avatarUrl ? <img src={avatarUrl} alt="" onError={e => { e.currentTarget.style.display = "none"; }}/> :
+          {avatarUrl ? <Image unoptimized src={avatarUrl} width={54} height={54} alt="OpenSea public profile avatar"/> :
             <span>◈</span>}
         </div>
         <div className="wallet-overall-name">
