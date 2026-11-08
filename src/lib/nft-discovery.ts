@@ -22,7 +22,7 @@ export class DiscoveryError extends Error {
   constructor(message: string, public status = 502) { super(message); }
 }
 const inputSchema = z.object({
-  chain: z.enum(["solana", "ink", "bitcoin"]),
+  chain: z.enum(["solana", "ink", "arc", "bitcoin"]),
   address: z.string().trim().min(14).max(96),
   contract: z.string().trim().max(42).optional(),
 }).strict();
