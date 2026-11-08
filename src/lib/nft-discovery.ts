@@ -10,6 +10,9 @@ export type DiscoveryAsset = {
   id: string; name: string; imageUrl: string | null; url: string;
   kind: "holding" | "received" | "sent";
   collection: string | null;
+  /** Optional on-chain contract identifier for EVM NFT grouping. */
+  contract?: string;
+  tokenId?: string;
 };
 export type DiscoveryResult = {
   chain: DiscoveryChain; address: string; assets: DiscoveryAsset[];
