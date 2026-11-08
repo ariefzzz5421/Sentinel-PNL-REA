@@ -62,7 +62,7 @@ describe("Overall matched NFT wallet profit", () => {
     expect(comp).toContain("setCustomName(e.target.value)");
     expect(comp).toContain("Download PNG");
     expect(comp).toContain("navigator.share");
-    expect(comp).toContain("canvas.toBlob");
+    expect(comp).toContain("target.toBlob");
     expect(result).toContain("<WalletOverallCard events={events}");
     expect(result).toContain("scan-pnl-native");
     expect(result).toContain("scan-pnl-usd");
