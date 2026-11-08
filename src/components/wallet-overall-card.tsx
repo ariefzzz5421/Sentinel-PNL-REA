@@ -222,7 +222,8 @@ export function WalletOverallCard({ events, wallet, partial, spot }: {
   }
 
   return <>
-    <section className="wallet-overall-summary" aria-label="Overall matched NFT PnL for scanned wallet">
+    <section className="wallet-overall-summary" aria-label="Overall matched NFT PnL for scanned wallet"
+      title={partial ? "Results are partial: some trades or network fees may not be indexed." : "Based on matched indexed NFT trades; fees may be incomplete."}>
       <div className="wallet-overall-identity">
         <div className="wallet-overall-avatar" aria-hidden="true">
           {avatarUrl ? <Image unoptimized src={avatarUrl} width={54} height={54} alt="OpenSea public profile avatar"/> :
