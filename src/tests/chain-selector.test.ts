@@ -9,6 +9,8 @@ describe("extra blockchain selector options", () => {
     expect(scanChainById("solana")).toMatchObject({ chainId: null, currency: "SOL", scanReady: false });
     expect(scanChainById("ink")).toMatchObject({ chainId: 57073, currency: "ETH", scanReady: false });
     expect(scanChainById("bitcoin")).toMatchObject({ chainId: null, currency: "BTC", scanReady: false, discoveryReady: true });
+    expect(scanChainById("arc")).toMatchObject({ chainId: 5042, currency: "USDC", scanReady: false, discoveryReady: true });
+    expect(scanChainById("ink")).toMatchObject({ chainId: 57073, currency: "ETH", scanReady: false, discoveryReady: true });
   });
 
   it("includes checked-in official SVG assets for both new chains", () => {
