@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CircleHelp, FileInput, ScanSearch } from "lucide-react";
 import { addressSchema, eventsSchema, type TradeEvent } from "@/lib/schema";
-import { autoPricedChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
+import { autoPricedChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoEvmChain, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChains } from "@/lib/scan-chains";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
@@ -25,6 +25,7 @@ export function ScannerHome() {
   const [discovery, setDiscovery] = useState<DiscoveryResult | null>(null);
   const [evmDiscoveries, setEvmDiscoveries] = useState<DiscoveryResult[]>([]);
   const [networkStatuses, setNetworkStatuses] = useState<AutoScanNetworkStatus[]>([]);
+  const [selectedChain, setSelectedChain] = useState<AutoEvmChain | null>(null);
   const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
   const [holdingsComplete, setHoldingsComplete] = useState(false);
   const [resultAddress, setResultAddress] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function ScannerHome() {
     setDiscovery(null);
     setEvmDiscoveries([]);
     setNetworkStatuses([]);
+    setSelectedChain(null);
     setResultHoldings([]);
     setHoldingsComplete(false);
     setResultAddress(null);
@@ -174,12 +176,14 @@ export function ScannerHome() {
         <Link href="/methodology">PnL methodology <CircleHelp size={15}/></Link>
       </aside>
       <main className="scanner-main" id="scanner">
-        <div className="scanner-chains" role="img" aria-label="Network logos: Ethereum, Base, Arbitrum, Robinhood, Arc, Solana, Ink and Bitcoin. Network selection is automatic.">
-          {scanChains.map((item) => <span key={item.id} className="scanner-chain-display"
-            title={item.scanReady || item.id === "arc" || item.id === "ink"
-              ? item.label + " scanned automatically for EVM addresses" : item.label + ": " + ("unavailableReason" in item ? item.unavailableReason : "Requires a matching address")}>
-            <Image src={item.icon} width={19} height={19} alt=""/>{item.label}
-          </span>)}
+        <div className="scanner-chains" role="img" aria-label="Supported network logos: Ethereum, Base, Arbitrum, Robinhood, Arc, Solana, Ink and Bitcoin. Auto scan selects the relevant networks from the address.">
+          <div className="scanner-chain-track">
+            {[0, 1, 2].map((copy) => <div className="scanner-chain-set" key={copy} aria-hidden={copy > 0 ? "true" : undefined}>
+              {scanChains.map((item) => <span key={item.id} className="scanner-chain-display">
+                <Image src={item.icon} width={19} height={19} alt=""/>{item.label}
+              </span>)}
+            </div>)}
+          </div>
         </div>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> SENTINEL ANALYSIS</div>
@@ -205,8 +209,10 @@ export function ScannerHome() {
           {message}
         </p>}
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
-          ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} networkStatuses={networkStatuses}/>
-            {evmDiscoveries.map(result => <DiscoveryResults key={result.chain + ":" + result.address} result={result}/>) }</>
+          ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} networkStatuses={networkStatuses}
+              selectedChain={selectedChain} onChainSelect={setSelectedChain}/>
+            {evmDiscoveries.filter(result => selectedChain === null || result.chain === selectedChain)
+              .map(result => <DiscoveryResults key={result.chain + ":" + result.address} result={result}/>) }</>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
       <aside className="scanner-side scanner-side-right" aria-label="How to use">
