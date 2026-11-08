@@ -216,3 +216,15 @@ To validate an address with real data, use the production site, a public wallet,
 - **ORD.NET is optional, not needed to render cards.** Ordiscan holdings, transfers and collection floor quotes do not establish purchase or sale prices. Unverified realized/unrealized PnL and ROI must be **Unknown**. Collection floor is a market quote, not cost basis.
 - With confirmed sale pricing available from a separately configured provider, realized PnL/ROI show only verified matched transactions, before fees. Unrealized PnL is a floor-based partial estimate on holdings with verified cost. One-address scans and historical windows are incomplete.
 - Existing CI typecheck, lint, tests and production build protect other chains. All automated price fixture tests use mock provider responses, not live market prices.
+
+
+### Automatic network scanning (no chain selection)
+
+The network logos above the home scanner are now **informational only**, not tabs. Press **Scan** once:
+- **EVM 0x wallet / ENS:** resolve once, then query every supported live EVM PnL provider (Ethereum, Base, Arbitrum, Robinhood). Contract and Bot PnL modes also query those same networks with the supplied contract filter.
+- **Bitcoin or Solana address:** infer the non-EVM family from its format and call the existing read-only discovery endpoint. A 0x address does **not** imply the user's BTC or Solana address.
+- **Ink:** historical full-wallet trade PnL is not indexed. When a valid ERC-721 contract is provided alongside one EVM wallet, the existing Ink recent-transfer discovery is included separately, with unverified costs. **Arc:** no USDC-native NFT PnL scanner yet; its logo does not imply scan coverage.
+
+The EVM requests are bounded to two concurrent wallet+chain calls to avoid overwhelming marketplace provider quotas; 429/provider failures do not erase successful chain results. Each network shows an independent status and event count, with a visible partial-history notice when any network is unavailable. Events are validated against their requested wallet, chain and contract before aggregation. The existing ETH/WETH-denominated PnL engine and card renderer remain chain-aware; BTC and SOL results are not mixed into ETH accounting.
+
+A successful API response with **zero supported events** does not establish that there were no on-chain trades. OpenSea feed coverage, currency filters and pagination limitations still apply; see the existing methodology documentation.

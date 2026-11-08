@@ -6,6 +6,7 @@ import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
 import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
+import type { AutoScanNetworkStatus } from "@/lib/automatic-scan";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -78,8 +79,9 @@ function downloadCsv(rows: CollectionRow[]) {
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(href);
 }
 export function ScanResults({
-  events, holdings, holdingsComplete, partial, warning, address,
-}: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null }) {
+  events, holdings, holdingsComplete, partial, warning, address, networkStatuses = [],
+}: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; warning: string; address: string | null;
+  networkStatuses?: AutoScanNetworkStatus[] }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [cardFont, setCardFont] = useState<FontChoice>("oswald");
@@ -104,6 +106,15 @@ export function ScanResults({
   }, [activeKey]);
 
   return <section className="scan-results" aria-label="NFT collection scan results">
+    {networkStatuses.length > 0 && <div className="scan-network-status" aria-label="Automatically scanned networks">
+      {networkStatuses.map(item => <span key={item.chain}
+        className={item.failed ? item.checked ? "partial" : "failed" : "checked"}
+        title={item.checked + " successful, " + item.failed + " failed wallet requests"}>
+        <span aria-hidden="true">{item.failed ? item.checked ? "◐" : "!" : "✓"}</span>
+        {item.chain === "ethereum" ? "ETH" : item.chain === "arbitrum" ? "ARB" : item.chain === "robinhood" ? "RH" : "Base"}
+        <small>{item.eventCount} events{item.failed ? " · " + item.failed + " failed" : ""}</small>
+      </span>)}
+    </div>}
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">
       <button type="button" aria-pressed={filter === "recent"} className={filter === "recent" ? "active" : ""} onClick={() => setFilter("recent")}>Recent</button>
       <button type="button" aria-pressed={filter === "best"} className={filter === "best" ? "active" : ""} onClick={() => setFilter("best")}>Best PNL</button>
