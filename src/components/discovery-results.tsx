@@ -81,7 +81,8 @@ function BitcoinSummary({ pnl, owned, onCreateCard }: { pnl: BitcoinPnl; owned: 
 
 export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
   const [showBitcoinCard, setShowBitcoinCard] = useState(false);
-  if (result.assets.length === 0 && !(result.chain === "bitcoin" && result.bitcoinPnl)) {
+  const unpricedEvm = result.chain === "ink" || result.chain === "arc";
+  if (result.assets.length === 0 && !unpricedEvm && !(result.chain === "bitcoin" && result.bitcoinPnl)) {
     return <div className="discovery-empty-simple" role="status">No NFT Trades Found</div>;
   }
   const gain = result.matchedPnl;
@@ -89,7 +90,7 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
   return <section className="discovery-results" aria-label="NFT discovery results">
     <div className="discovery-heading">
       <div><span className="discovery-eyebrow">PUBLIC ON-CHAIN DATA</span>
-        <h2>{result.chain === "bitcoin" ? "Bitcoin Ordinals" : result.chain === "solana" ? "Solana NFT holdings" : "Ink contract activity"}</h2>
+        <h2>{result.chain === "bitcoin" ? "Bitcoin Ordinals" : result.chain === "solana" ? "Solana NFT holdings" : result.chain === "arc" ? "Arc NFT activity" : "Ink NFT activity"}</h2>
       </div>
       <span className="discovery-counter">{result.assets.length} {result.mode === "holdings" ? "items" : "events"}</span>
     </div>
@@ -102,6 +103,8 @@ export function DiscoveryResults({ result }: { result: DiscoveryResult }) {
       <small>{gain ? `${gain.matchedSales} matched sales · partial history · before fees` : "No verified buy–sell matches found in available history"}</small>
     </div> : null}
     {result.chain === "bitcoin" && <p className="btc-ordinal-disclaimer">{result.note}</p>}
+    {unpricedEvm && <p className="btc-ordinal-disclaimer"><strong>Price / PnL: Unknown.</strong> {result.note}</p>}
+    {result.assets.length === 0 && unpricedEvm && <div className="discovery-empty-simple" role="status">No indexed NFT holdings or transfers in the available history. This does not prove the wallet has never traded on this network.</div>}
     {result.assets.length > 0 && <>
       {result.chain === "bitcoin" && <h3 className="btc-ordinal-holdings-heading">Owned inscriptions</h3>}
       <div className="discovery-grid">

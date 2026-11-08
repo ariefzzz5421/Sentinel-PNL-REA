@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { autoEvmChains, detectAutomaticWalletFamily, scanAllEvmNetworks } from "../lib/automatic-scan";
+import {
+  autoEvmChains, autoPricedChains, detectAutomaticWalletFamily, scanAllEvmNetworks,
+} from "../lib/automatic-scan";
 
 const wallet = "0xB5D1C17749985F8Ba6F17dA81CE42FcE59d9f9f7";
 const contract = "0x42411286529e1da56c7c8c7535737961b2e06955";
@@ -12,93 +14,114 @@ const rhSale = {
   tokenId: "683", type: "sell", amountEth: "0.0304",
   feeEth: "0", feeKnown: false, txHash,
 };
+const exampleDiscovery = (chain: "ink" | "arc", address: string) => ({
+  chain, address,
+  assets: [{
+    id: "indexed:" + chain + ":1", name: chain + " NFT #1",
+    imageUrl: null, collection: "Index NFT",
+    kind: chain === "ink" ? "received" : "holding",
+    url: "https://explorer.arc.io/tx/" + txHash,
+  }],
+  mode: "recent-transfers", partial: true, pnlAvailable: false,
+  note: chain + " unpriced NFT events. Purchase and sale prices Unknown.",
+});
+function mockNetwork(options?: { fail?: string; wrongDiscovery?: boolean; mismatches?: boolean }) {
+  const calls: Array<{ endpoint: string; chain: string; contract?: string }> = [];
+  const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+    const req = JSON.parse(String(init?.body));
+    calls.push({ endpoint: String(url), chain: req.chain, contract: req.contract });
+    if (req.chain === options?.fail)
+      return new Response(JSON.stringify({ error: "Provider rate limit" }), { status: 429 });
+    if (String(url) === "/api/nft-discovery")
+      return new Response(JSON.stringify(exampleDiscovery(req.chain, options?.wrongDiscovery ? "0x" + "a".repeat(40) : req.address)));
+    return new Response(JSON.stringify({
+      events: req.chain === "robinhood" ? [rhSale,
+        ...(options?.mismatches ? [
+          { ...rhSale, id: "wrong-chain", chain: "base" },
+          { ...rhSale, id: "wrong-contract", contract: "0x" + "f".repeat(40) },
+        ] : [])] : [],
+      partial: false,
+    }));
+  }) as unknown as typeof fetch;
+  return { fetcher, calls };
+}
 
-describe("one-click automatic multi-network scanner", () => {
+describe("one-click automatic EVM scanner for every supported network", () => {
   it("detects wallet family without requiring chain selection", () => {
     expect(detectAutomaticWalletFamily(wallet)).toEqual({ kind: "evm" });
     expect(detectAutomaticWalletFamily(btc)).toEqual({ kind: "discovery", chain: "bitcoin", address: btc });
     expect(detectAutomaticWalletFamily(sol)).toEqual({ kind: "discovery", chain: "solana", address: sol });
     expect(() => detectAutomaticWalletFamily(wallet + "\n" + btc)).toThrow(/one Bitcoin or Solana/);
-    expect(autoEvmChains).toEqual(["ethereum", "base", "arbitrum", "robinhood"]);
-    expect(autoEvmChains).not.toContain("arc");
-    expect(autoEvmChains).not.toContain("ink");
+    expect(autoPricedChains).toEqual(["ethereum", "base", "arbitrum", "robinhood"]);
+    expect(autoEvmChains).toEqual(["ethereum", "base", "arbitrum", "robinhood", "arc", "ink"]);
   });
 
-  it("finds Robinhood NFT trades even without clicking RH, preserving chain identity", async () => {
-    const requests: string[] = [];
-    const fetcher = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
-      const request = JSON.parse(String(options?.body));
-      requests.push(request.chain);
-      return new Response(JSON.stringify({
-        events: request.chain === "robinhood" ? [rhSale] : [],
-        partial: false,
-      }), { status: 200 });
-    }) as unknown as typeof fetch;
+  it("auto-fetches RH priced trades plus Arc/Ink unpriced NFT discovery without CA", async () => {
+    const { fetcher, calls } = mockNetwork();
     const progress: string[] = [];
-    const result = await scanAllEvmNetworks([wallet], "wallet", undefined,
-      fetcher, (done, total) => progress.push(done + "/" + total));
-    expect(requests).toEqual(["ethereum", "base", "arbitrum", "robinhood"]);
+    const result = await scanAllEvmNetworks([wallet], "wallet", undefined, fetcher,
+      (complete, total) => progress.push(complete + "/" + total));
+    expect(calls.map(c => c.chain)).toEqual(["ethereum", "base", "arbitrum", "robinhood", "arc", "ink"]);
+    expect(calls.slice(0, 4).every(c => c.endpoint === "/api/scan")).toBe(true);
+    expect(calls.slice(4).every(c => c.endpoint === "/api/nft-discovery" && !c.contract)).toBe(true);
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({
       chain: "robinhood", contract, tokenId: "683", txHash, amountEth: "0.0304",
     });
-    expect(result.statuses.find(x => x.chain === "robinhood"))
-      .toMatchObject({ checked: 1, failed: 0, eventCount: 1 });
-    expect(result.requestsSucceeded).toBe(4);
-    expect(result.partial).toBe(false);
-    expect(progress).toEqual(["2/4", "4/4"]);
+    expect(result.discoveries).toHaveLength(2);
+    expect(result.discoveries.map(x => x.chain)).toEqual(["arc", "ink"]);
+    expect(result.discoveries.every(x => x.pnlAvailable === false)).toBe(true);
+    expect(result.statuses.find(s => s.chain === "arc"))
+      .toMatchObject({ checked: 1, failed: 0, eventCount: 0, holdingCount: 1, coverage: "unpriced-transfers" });
+    expect(result.statuses.find(s => s.chain === "ink"))
+      .toMatchObject({ checked: 1, failed: 0, eventCount: 1, holdingCount: 0, coverage: "unpriced-transfers" });
+    expect(result.statuses.find(s => s.chain === "robinhood"))
+      .toMatchObject({ checked: 1, failed: 0, eventCount: 1, coverage: "priced-sales" });
+    expect(result.requestsSucceeded).toBe(6);
+    expect(result.partial).toBe(true); // Unpriced explorers cannot prove complete PnL.
+    expect(progress).toEqual(["2/6", "4/6", "6/6"]);
   });
 
-  it("keeps successful chain results when another chain has a provider outage", async () => {
-    const fetcher = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
-      const request = JSON.parse(String(options?.body));
-      return request.chain === "base"
-        ? new Response(JSON.stringify({ error: "Base provider rate limit" }), { status: 429 })
-        : new Response(JSON.stringify({
-          events: request.chain === "robinhood" ? [rhSale] : [], partial: false,
-        }));
-    }) as unknown as typeof fetch;
+  it("keeps RH and Ink activity when Base is rate limited", async () => {
+    const { fetcher } = mockNetwork({ fail: "base" });
     const result = await scanAllEvmNetworks([wallet], "wallet", undefined, fetcher);
     expect(result.events).toHaveLength(1);
+    expect(result.discoveries).toHaveLength(2);
     expect(result.requestsFailed).toBe(1);
     expect(result.partial).toBe(true);
-    expect(result.warnings.join(" ")).toContain("Base provider rate limit");
+    expect(result.warnings.join(" ")).toContain("BASE: Provider rate limit");
     expect(result.statuses.find(s => s.chain === "base"))
       .toMatchObject({ checked: 0, failed: 1 });
   });
 
-  it("rejects wrong-wallet, wrong-chain, wrong-contract events and retains chain filters", async () => {
-    const fetcher = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
-      const request = JSON.parse(String(options?.body));
-      return new Response(JSON.stringify({
-        events: request.chain === "robinhood" ? [
-          rhSale,
-          { ...rhSale, id: "wrong-chain", chain: "base" },
-          { ...rhSale, id: "wrong-contract", contract: "0x" + "f".repeat(40) },
-        ] : [], partial: false,
-      }));
-    }) as unknown as typeof fetch;
+  it("rejects mismatched EVM paid events and retains contract filters for all networks", async () => {
+    const { fetcher, calls } = mockNetwork({ mismatches: true });
     const result = await scanAllEvmNetworks([wallet], "contract", contract, fetcher);
     expect(result.events.map(event => event.id)).toEqual([rhSale.id]);
-    expect(result.partial).toBe(true);
     expect(result.warnings.join(" ")).toContain("Mismatched");
-    expect(JSON.parse(String(vi.mocked(fetcher).mock.calls[0]?.[1]?.body))).toMatchObject({
-      chain: "ethereum", mode: "contract", contract,
-    });
+    expect(calls.map(c => c.contract)).toEqual(Array(6).fill(contract));
+    expect(result.discoveries).toHaveLength(2);
   });
 
-  it("fails visibly when all network providers fail", async () => {
+  it("does not accept another wallet's Arc/Ink activity", async () => {
+    const { fetcher } = mockNetwork({ wrongDiscovery: true });
+    const result = await scanAllEvmNetworks([wallet], "wallet", undefined, fetcher);
+    expect(result.discoveries).toHaveLength(0);
+    expect(result.requestsFailed).toBe(2);
+    expect(result.events).toHaveLength(1);
+  });
+
+  it("fails clearly when every network provider is unavailable", async () => {
     const fetcher = vi.fn(async () =>
       new Response(JSON.stringify({ error: "Provider unavailable" }), { status: 503 })) as unknown as typeof fetch;
     await expect(scanAllEvmNetworks([wallet], "wallet", undefined, fetcher))
       .rejects.toThrow(/All supported EVM network scans failed/);
   });
 
-  it("scans every supported network for each input address, without duplicate wallet requests", async () => {
-    const fetcher = vi.fn(async () =>
-      new Response(JSON.stringify({ events: [], partial: false }))) as unknown as typeof fetch;
+  it("deduplicates wallet inputs across all 6 EVM networks", async () => {
+    const { fetcher } = mockNetwork();
     const result = await scanAllEvmNetworks([wallet, wallet.toLowerCase()], "wallet", undefined, fetcher);
-    expect(result.requestsSucceeded).toBe(4);
-    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(result.requestsSucceeded).toBe(6);
+    expect(vi.mocked(fetcher).mock.calls).toHaveLength(6);
   });
 });

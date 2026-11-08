@@ -4,6 +4,7 @@ import { addressSchema } from "./schema";
 import { getMatchedSolPnl, type MatchedSolPnl } from "./solana-pnl";
 import { scanBitcoinOrdinals, BitcoinProviderError } from "./bitcoin-ordinals";
 import type { BitcoinPnl } from "./bitcoin-pnl";
+import { scanExplorerEvm, ExplorerEvmError } from "./explorer-evm";
 
 export type DiscoveryAsset = {
   id: string; name: string; imageUrl: string | null; url: string;
@@ -21,7 +22,7 @@ export class DiscoveryError extends Error {
   constructor(message: string, public status = 502) { super(message); }
 }
 const inputSchema = z.object({
-  chain: z.enum(["solana", "ink", "bitcoin"]),
+  chain: z.enum(["solana", "ink", "arc", "bitcoin"]),
   address: z.string().trim().min(14).max(96),
   contract: z.string().trim().max(42).optional(),
 }).strict();
@@ -201,5 +202,13 @@ async function ink(input: Input, fetcher: typeof fetch): Promise<DiscoveryResult
 export async function discoverNfts(input: Input, fetcher: typeof fetch = fetch): Promise<DiscoveryResult> {
   if (input.chain === "solana") return helius(input, fetcher);
   if (input.chain === "bitcoin") return ordiscan(input, fetcher);
-  return ink(input, fetcher);
+  if (input.chain === "ink" || input.chain === "arc") {
+    if (input.chain === "ink" && input.contract) return ink(input, fetcher);
+    try { return await scanExplorerEvm(input.chain, input.address, input.contract, fetcher); }
+    catch (error) {
+      if (error instanceof ExplorerEvmError) throw new DiscoveryError(error.message, error.status);
+      throw error;
+    }
+  }
+  throw new DiscoveryError("Unsupported network.", 400);
 }

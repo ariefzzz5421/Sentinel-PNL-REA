@@ -111,8 +111,8 @@ export function ScanResults({
         className={item.failed ? item.checked ? "partial" : "failed" : "checked"}
         title={item.checked + " successful, " + item.failed + " failed wallet requests"}>
         <span aria-hidden="true">{item.failed ? item.checked ? "◐" : "!" : "✓"}</span>
-        {item.chain === "ethereum" ? "ETH" : item.chain === "arbitrum" ? "ARB" : item.chain === "robinhood" ? "RH" : "Base"}
-        <small>{item.eventCount} events{item.failed ? " · " + item.failed + " failed" : ""}</small>
+        {item.chain === "ethereum" ? "ETH" : item.chain === "arbitrum" ? "ARB" : item.chain === "robinhood" ? "RH" : item.chain === "arc" ? "ARC" : item.chain === "ink" ? "INK" : "Base"}
+        <small>{item.eventCount} {item.coverage === "unpriced-transfers" ? "transfers" : "events"}{item.coverage === "unpriced-transfers" ? " · " + item.holdingCount + " owned · PnL Unknown" : ""}{item.failed ? " · " + item.failed + " failed" : ""}</small>
       </span>)}
     </div>}
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">

@@ -1,5 +1,5 @@
 /** Wallet-family detection is purely syntactic; providers verify real ownership. */
-export type DiscoveryChain = "solana" | "bitcoin" | "ink";
+export type DiscoveryChain = "solana" | "bitcoin" | "ink" | "arc";
 
 const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const bitcoinBech32 = /^(bc1)[023456789acdefghjklmnpqrstuvwxyz]{11,87}$/i;

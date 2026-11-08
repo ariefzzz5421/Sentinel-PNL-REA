@@ -95,7 +95,7 @@ Tap any NFT collection and choose `Complete` or `Simple`. The preview and downlo
 
 `ETH ↔ USD` uses a current CoinGecko display quote fetched server-side from `/api/market/eth-usd` and does **not** imply historical execution-rate conversion. If pricing is unavailable, USD is disabled. Gas cannot be toggled when provider receipt costs are unknown; the UI explains this rather than fabricating zero fees. ROI is computed only over buys matched to sales; mint/transfer counts remain unknown until actual history is indexed. Both preview and exported image label estimated / partial data.
 
-Network selector uses compact `ETH, Base, ARB, RH, ARC` labels. RH allows ETH-based OpenSea sales with the official wrapped ETH contract; ARC is selectable but the existing ETH-ledger is **not** used for Arc's USDC-native PnL, which would otherwise produce incorrect ETH metrics. An Arc scan returns an informative unsupported-calculation message until a USDC-native accounting engine is implemented.
+The existing RH PnL adapter supports verified ETH/WETH OpenSea sales. Arc uses USDC-native gas and must never be represented by ETH-denominated PnL. The current one-click scanner includes Arc read-only NFT holdings/transfers, while Arc sale prices and profit remain **Unknown**.
 
 Supporting evidence: https://docs.opensea.io/reference/get_chains, https://docs.opensea.io/reference/list_events_by_account, https://opensea.io/blog/articles/robinhood-chain-is-live-on-opensea, https://opensea.io/blog/articles/arc-is-live-on-opensea.
 
@@ -153,7 +153,7 @@ Validate at 320, 375, 390, 430, 768, 1024 and 1440px. Mobile browser visual test
 
 The chain selector displays `ETH · Base · ARB · RH · ARC · SOL · INK`. Official Solana Foundation logomark and Ink chain mark SVGs are checked in at `public/chains/solana.svg` and `public/chains/ink.svg`, respectively, preserving the upstream artwork (see [Solana branding](https://solana.com/branding) and [Ink brand kit](https://docs.inkonchain.com/work-with-ink/brand-kit)).
 
-**Network UI does not imply scan coverage.** Solana uses a non-EVM address model and is not supported by the current EVM NFT scanner. Ink is an EVM L2 (mainnet chain ID 57073, gas ETH) but has no verified indexed NFT sale/mint adapter in this app. SOL and INK tabs provide accurate explanatory status upon selection/scan; neither fabricates PnL or submits malformed data to the existing EVM API. Arc remains visible with its existing USDC accounting limitation.
+**The network bar is informational, not selectable.** Solana uses a non-EVM address model and is detected directly from its address. Ink (57073, native ETH) and Arc (5042, native USDC) support read-only wallet NFT holdings/transfer discovery via Blockscout. Their prices/realized PnL are not proven by transfers and remain **Unknown**.
 
 The market tape now includes SOL alongside BTC, ETH, BNB, and HYPE from one CoinGecko `/coins/markets` query. It shows real provider USD spot quotes and 24h changes, cached server-side for 90 seconds. The SOL ticker uses the official local Solana Foundation logo. When a quote is absent, the UI displays a dash—not a made-up price. All existing assets continue to use CoinGecko-provided images when available.
 
@@ -180,7 +180,7 @@ Required **server-only** Vercel environment variables, for the relevant Producti
 The keys stay on server. The public /api/status endpoint reveals booleans, never secrets. Redeploy Vercel after adding env variables.
 
 Usage:
-1. Paste EVM wallet, select INK and enter a collection contract, then Scan. This shows recent inbound/outbound ERC-721 Transfer logs, not complete holdings or sales.
+1. Paste a 0x EVM wallet and click Scan once for ETH, Base, ARB, RH, Arc and Ink. Ink/Arc display bounded Blockscout NFT holdings and transfer activity without requiring a contract. Contract-specific Ink RPC discovery remains available as a supplementary path.
 2. Paste 32-byte base58 Solana address and hit Scan; it auto-selects SOL, queries Helius DAS, and shows owned NFTs.
 3. Paste bc1… / 1… / 3… Bitcoin mainnet address and hit Scan; it auto-selects BTC and queries Ordiscan inscriptions. Address syntax is checked, but the provider confirms actual ownership.
 4. SOL / BTC have no contract-filtered scan or Bot PnL. BTC shows owned inscription cards, history, collection floors and verified-subset realized/unrealized PnL where prices are verified. Scans are bounded and explain incomplete coverage.
@@ -221,10 +221,18 @@ To validate an address with real data, use the production site, a public wallet,
 ### Automatic network scanning (no chain selection)
 
 The network logos above the home scanner are now **informational only**, not tabs. Press **Scan** once:
-- **EVM 0x wallet / ENS:** resolve once, then query every supported live EVM PnL provider (Ethereum, Base, Arbitrum, Robinhood). Contract and Bot PnL modes also query those same networks with the supplied contract filter.
+- **EVM 0x wallet / ENS:** resolve once and scan six mainnets (Ethereum, Base, Arbitrum, Robinhood, Arc and Ink). The first four use existing ETH/WETH OpenSea PnL; Arc and Ink use read-only Blockscout ownership/transfer discovery. Contract and Bot PnL inputs still filter the four priced chains, and Ink/Arc report unpriced transfers.
 - **Bitcoin or Solana address:** infer the non-EVM family from its format and call the existing read-only discovery endpoint. A 0x address does **not** imply the user's BTC or Solana address.
-- **Ink:** historical full-wallet trade PnL is not indexed. When a valid ERC-721 contract is provided alongside one EVM wallet, the existing Ink recent-transfer discovery is included separately, with unverified costs. **Arc:** no USDC-native NFT PnL scanner yet; its logo does not imply scan coverage.
+- **Ink and Arc:** the address alone is sufficient to query indexed ERC-721/1155 holdings and token-transfer history through their public Blockscout v2 explorers. These are *activity-only*, not priced sale events. Arc USDC-native PnL and Ink verifiable NFT sale costs remain Unknown until supported marketplace settlement data is indexed.
 
-The EVM requests are bounded to two concurrent wallet+chain calls to avoid overwhelming marketplace provider quotas; 429/provider failures do not erase successful chain results. Each network shows an independent status and event count, with a visible partial-history notice when any network is unavailable. Events are validated against their requested wallet, chain and contract before aggregation. The existing ETH/WETH-denominated PnL engine and card renderer remain chain-aware; BTC and SOL results are not mixed into ETH accounting.
+The EVM requests are bounded to two concurrent wallet+chain calls to avoid overwhelming marketplace provider quotas; 429/provider failures do not erase successful chain results. Ink/Arc each use at most two pages of owned NFTs and two pages of token transfers per address, with 45-second in-memory caching. Each network shows separate success/failure and events/holdings counts. Matched ETH/WETH sales are only processed for the original four priced networks; Ink/Arc transfer events are **never** imported into the ETH PnL ledger. BTC and SOL addresses are scanned through separate read-only providers.
 
 A successful API response with **zero supported events** does not establish that there were no on-chain trades. OpenSea feed coverage, currency filters and pagination limitations still apply; see the existing methodology documentation.
+
+### EVM network coverage: Ink and Arc auto discovery
+
+- **No chain selection**: the six EVM mainnets currently implemented by Sentinel are Ethereum (1), Base (8453), Arbitrum (42161), Robinhood (4663), Arc (5042), and Ink (57073). This is not a promise to scan every EVM chain in existence; adding new chains requires an indexed provider adapter.
+- **Ink + Arc**: read-only Blockscout API v2 `/addresses/{address}/token-transfers` and `/addresses/{address}/nft` with ERC-721/1155 filtering, two-page limits per feed, timeouts, pagination guards, fixed official explorer origins and small in-memory caches. No wallet connection, private key or new environment key is needed. Addresses with no indexed results may still have unindexed past activity.
+- **Safety**: holdings are labeled Owned, transfer events Received/Sent. Neither on-chain token transfers nor Arc's USDC-native gas amounts are assumed to be sales or ETH prices. Realized/unrealized PnL and ROI for these chains are **Unknown** until verified marketplace pricing and currency-specific accounting are implemented.
+- **Failure isolation**: if an indexer is rate limited or unavailable, its network status reports an error while successful ETH/Base/ARB/RH results remain visible. A successful response with no assets is labeled a bounded indexing result, not proof of no trades.
+- **Source APIs**: https://docs.inkonchain.com/tools/block-explorers · https://explorer.inkonchain.com · https://explorer.arc.io · https://github.com/blockscout/blockscout-api-v2-swagger
