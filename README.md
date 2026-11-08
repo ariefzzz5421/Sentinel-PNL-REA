@@ -245,3 +245,12 @@ A successful API response with **zero supported events** does not establish that
 - Selecting Ink/Arc and finding no indexed NFT assets shows **Not Found**; an unavailable provider shows **Indexer unavailable**, which is distinct from a legitimate empty result. Neither implies complete historic coverage.
 - Blockscout wallet NFT pagination now accepts the official `token_contract_address_hash` and `token_type` cursor fields. ETH/Base/ARB/RH sale matching remains unchanged; Ink/Arc transfers do not enter their financial calculations.
 - Mobile scan inputs and collection cards have additional padding and gaps, with responsive sizing for a signed native ETH value plus a small USD label.
+
+
+### Overall wallet PnL share card (read-only)
+
+The scan results include an Overall Wallet PnL card across **matched, ETH/WETH-priced ERC-721 sales** on Ethereum, Base, Arbitrum, and Robinhood. It is **not** whole-wallet net worth or total all-time profit: unmatched sales, unsupported payment tokens, incomplete indexer history and missing fees limit the result. If no buy→sell cost basis can be matched, it says **Unknown** instead of inventing a zero. Ink/Arc transfers are excluded because no validated settlement PnL is available.
+
+For a single wallet, the UI reads its public **OpenSea username** (falling back to public display name or the exact scanned 0x address) through the existing backend-only account profile route; no wallet connection is required. The name can be overridden in the overall PNG editor without altering accounting or claiming wallet ownership. When scanning several wallets, the default label is “Multiple wallets,” not a claimed shared OpenSea profile.
+
+The card provides a native PNG preview, **Download PNG**, **Share Image** via the browser's supported native share sheet (or download fallback), and text-only **Share on X**. USD uses the existing CoinGecko ETH spot endpoint (current exchange rate, **not** historical trade FX) and is omitted when the quote is unavailable. The generated PNG includes explicit partial-history/missing-fee caveats. Collection-list ETH and USD labels now share the same number font with a visible gap for readability.
