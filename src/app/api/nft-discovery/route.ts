@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     if (error instanceof ZodError)
-      return NextResponse.json({ error: "Use a valid chain, wallet, and optional Ink contract." }, { status: 400 });
+      return NextResponse.json({ error: "Use a valid BTC, SOL, Ink or Arc network and public wallet address." }, { status: 400 });
     if (error instanceof DiscoveryError)
       return NextResponse.json({ error: error.message }, { status: error.status });
     return NextResponse.json({ error: "NFT discovery is temporarily unavailable." }, { status: 500 });
