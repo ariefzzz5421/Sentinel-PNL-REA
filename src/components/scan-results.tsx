@@ -8,6 +8,7 @@ import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
 import type { AutoEvmChain, AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChainById } from "@/lib/scan-chains";
+import { filterNetworkItems } from "@/lib/network-filter";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -89,10 +90,10 @@ export function ScanResults({
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [cardFont, setCardFont] = useState<FontChoice>("oswald");
   const unpricedChain = selectedChain === "arc" || selectedChain === "ink";
-  const rows = useMemo(() => collectionRows(events.filter((event) =>
-    (selectedChain === null || event.chain === selectedChain) &&
-    (address === null || event.wallet.toLowerCase() === address.toLowerCase())),
-    holdings.filter(item => selectedChain === null || item.chain === selectedChain), holdingsComplete),
+  const rows = useMemo(() => collectionRows(
+    filterNetworkItems(events, selectedChain).filter(event =>
+      address === null || event.wallet.toLowerCase() === address.toLowerCase()),
+    filterNetworkItems(holdings, selectedChain), holdingsComplete),
     [events, holdings, holdingsComplete, address, selectedChain]);
   const shown = useMemo(() => {
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
