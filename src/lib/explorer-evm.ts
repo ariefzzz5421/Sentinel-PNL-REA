@@ -140,7 +140,7 @@ function transferAssets(raw: unknown, wallet: string, origin: string,
   const total = object(item.total);
   const ids = Array.isArray(item.token_ids) ? item.token_ids :
     [item.token_id ?? total?.token_id ?? object(item.token_instance)?.id];
-  const collection = truncate(token.name, tokenAddress.slice(0, 12) + "…");
+  const collection = truncate(token?.name, tokenAddress.slice(0, 12) + "…");
   const logIndex = item.log_index === undefined ? "0" : String(item.log_index);
   if (!/^\d{1,12}$/.test(logIndex)) return [];
   const output: DiscoveryAsset[] = [];
@@ -168,7 +168,7 @@ function heldAsset(raw: unknown, wallet: string, origin: string,
   const actualOwner = item.owner === undefined || item.owner === null ? null : address(item.owner);
   if (actualOwner && actualOwner !== wallet) return null;
   const metadata = object(item.metadata);
-  const collection = truncate(token.name, contract.slice(0, 12) + "…");
+  const collection = truncate(token?.name, contract.slice(0, 12) + "…");
   return {
     id: origin + ":" + contract + ":" + id,
     name: truncate(metadata?.name, collection + " #" + id),
