@@ -6,8 +6,9 @@ import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
 import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
 import type { Chain, TradeEvent } from "@/lib/schema";
-import type { AutoScanNetworkStatus } from "@/lib/automatic-scan";
+import type { AutoEvmChain, AutoScanNetworkStatus } from "@/lib/automatic-scan";
 import { scanChainById } from "@/lib/scan-chains";
+import { filterNetworkItems } from "@/lib/network-filter";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -80,14 +81,20 @@ function downloadCsv(rows: CollectionRow[]) {
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(href);
 }
 export function ScanResults({
-  events, holdings, holdingsComplete, partial, address, networkStatuses = [],
+  events, holdings, holdingsComplete, partial, address, networkStatuses = [], selectedChain = null, onChainSelect,
 }: { events: TradeEvent[]; holdings: PublicHolding[]; holdingsComplete: boolean; partial: boolean; address: string | null;
-  networkStatuses?: AutoScanNetworkStatus[] }) {
+  networkStatuses?: AutoScanNetworkStatus[];
+  selectedChain?: AutoEvmChain | null;
+  onChainSelect?: (next: AutoEvmChain | null) => void }) {
   const [filter, setFilter] = useState<Filter>("recent");
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [cardFont, setCardFont] = useState<FontChoice>("oswald");
-  const rows = useMemo(() => collectionRows(events.filter((event) => address === null ||
-    event.wallet.toLowerCase() === address.toLowerCase()), holdings, holdingsComplete), [events, holdings, holdingsComplete, address]);
+  const unpricedChain = selectedChain === "arc" || selectedChain === "ink";
+  const rows = useMemo(() => collectionRows(
+    filterNetworkItems(events, selectedChain).filter(event =>
+      address === null || event.wallet.toLowerCase() === address.toLowerCase()),
+    filterNetworkItems(holdings, selectedChain), holdingsComplete),
+    [events, holdings, holdingsComplete, address, selectedChain]);
   const shown = useMemo(() => {
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
       .sort((a, b) => (b.held || 0) - (a.held || 0));
@@ -107,17 +114,26 @@ export function ScanResults({
   }, [activeKey]);
 
   return <section className="scan-results" aria-label={partial ? "NFT collection scan results; history may be incomplete" : "NFT collection scan results"}>
-    {networkStatuses.length > 0 && <div className="scan-network-status" aria-label="Automatically scanned networks">
-      {networkStatuses.map(item => <span key={item.chain}
-        className={item.failed ? item.checked ? "partial" : "failed" : "checked"}
+    {networkStatuses.length > 0 && <div className="scan-network-status" role="group" aria-label="Filter results by EVM network">
+      <button type="button" className={"scan-network-filter-all" + (selectedChain === null ? " active" : "")}
+        aria-pressed={selectedChain === null} onClick={() => { setActiveKey(null); setFilter("recent"); onChainSelect?.(null); }}>
+        All Chains
+      </button>
+      {networkStatuses.map(item => <button key={item.chain} type="button"
+        className={(item.failed ? item.checked ? "partial" : "failed" : "checked") +
+          (selectedChain === item.chain ? " active" : "")}
+        aria-pressed={selectedChain === item.chain}
+        aria-label={"Show " + scanChainById(item.chain).label + " NFT events"}
         title={item.checked + " successful, " + item.failed + " failed wallet requests; " +
-          (item.coverage === "unpriced-transfers" ? "unpriced NFT transfer activity" : "NFT trades")}>
+          (item.coverage === "unpriced-transfers" ? "indexed on-chain NFT transfers; PnL unavailable" : "indexed marketplace NFT trades")}
+        onClick={() => { setActiveKey(null); setFilter("recent"); onChainSelect?.(selectedChain === item.chain ? null : item.chain); }}>
         <Image src={scanChainById(item.chain).icon} width={19} height={19} alt=""
           aria-hidden="true" className="scan-network-chain-icon"/>
         <span className="scan-network-label">{scanChainById(item.chain).label}</span>
         <small>{item.failed > 0 && item.checked === 0 ? "—" : item.eventCount} events</small>
-      </span>)}
+      </button>)}
     </div>}
+    {!unpricedChain && <>
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">
       <button type="button" aria-pressed={filter === "recent"} className={filter === "recent" ? "active" : ""} onClick={() => setFilter("recent")}>Recent</button>
       <button type="button" aria-pressed={filter === "best"} className={filter === "best" ? "active" : ""} onClick={() => setFilter("best")}>Best PNL</button>
@@ -149,6 +165,9 @@ export function ScanResults({
       </article>)}
     </div> : <div className="scan-results-empty"><Info size={20}/><p>{filter === "best" ? "No matched sales to rank in the available data." :
       filter === "holding" ? "No current owned collections returned by OpenSea." : "No supported priced NFT trades found."}</p></div>}
+    </>}
+    {unpricedChain && networkStatuses.some(item => item.chain === selectedChain && item.failed > 0 && item.checked === 0) &&
+      <div className="scan-results-empty" role="status">This network indexer was unavailable during the scan. Select All Chains to see other results.</div>}
 
     {selected && <div className="scan-modal-backdrop" role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) setActiveKey(null);
