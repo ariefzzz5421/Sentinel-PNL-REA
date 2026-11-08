@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Decimal from "decimal.js";
+import { rankCollectionsByRealizedPnl } from "@/lib/collection-pnl-ranking";
 import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
 import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
@@ -129,11 +129,8 @@ export function ScanResults({
   const shown = useMemo(() => {
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
       .sort((a, b) => (b.held || 0) - (a.held || 0));
-    if (filter === "best") return rows.filter((row) => row.pnl !== null)
-      .sort((a, b) => new Decimal(b.pnl!).cmp(a.pnl!));
-    if (filter === "worst") return rows.filter((row) =>
-      row.pnl !== null && new Decimal(row.pnl).lt(0))
-      .sort((a, b) => new Decimal(a.pnl!).cmp(b.pnl!));
+    if (filter === "best" || filter === "worst")
+      return rankCollectionsByRealizedPnl(rows, filter);
     return [...rows].sort((a, b) => b.latest.localeCompare(a.latest));
   }, [filter, rows]);
   const selected = rows.find((row) => row.key === activeKey) || null;
