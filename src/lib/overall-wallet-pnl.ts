@@ -28,25 +28,24 @@ export function summarizeOverallWalletPnl(
     ? events.filter(e => e.wallet.toLowerCase() === address.toLowerCase())
     : [...events];
   const summary = calculatePnl(scoped);
-  const matchedSales = summary.sells - summary.unknownBasisSales;
+  const matchedSales = summary.trades.filter(trade =>
+    trade.type === "sell" && trade.realizedEth !== null).length;
   const perChain: OverallWalletPnl["perChain"] = [];
   for (const chain of ["ethereum", "base", "arbitrum", "robinhood"] as const) {
     const chainEvents = scoped.filter(e => e.chain === chain);
     if (!chainEvents.length) continue;
     const result = calculatePnl(chainEvents);
-    const matched = result.sells - result.unknownBasisSales;
+    const matched = result.trades.filter(trade =>
+      trade.type === "sell" && trade.realizedEth !== null).length;
     perChain.push({
       chain, matchedSales: matched,
       realizedEth: matched > 0 ? result.realizedEth : null,
     });
   }
-  // Sum already-matched chain rows only; unknown-basis sales cannot become zero-cost wins.
-  const realized = perChain.reduce(
-    (sum, chain) => chain.realizedEth === null ? sum : sum.plus(new Decimal(chain.realizedEth)),
-    new Decimal(0),
-  );
+  // Use exactly the curated source calculation (same as per-collection cards).
+  // No extra price/fee inference or recomputation in the share-card renderer.
   return {
-    realizedEth: matchedSales ? realized.toFixed(8) : null,
+    realizedEth: matchedSales ? new Decimal(summary.realizedEth).toFixed(8) : null,
     matchedSales,
     unknownBasisSales: summary.unknownBasisSales,
     estimatedSales: summary.estimatedSales,
