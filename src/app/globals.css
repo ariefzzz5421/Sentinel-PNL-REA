@@ -2695,3 +2695,43 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   .wallet-overall-dialog .wallet-overall-export{grid-template-columns:1fr}
   .wallet-overall-dialog .wallet-overall-export button:last-child{grid-column:1}
 }
+
+
+/* Hidden by default: auditable signed PnL breakdown, separate from share PNG. */
+.wallet-overall-audit{
+  grid-column:1/-1;
+  border-top:1px solid #433553;
+  padding-top:10px;
+  color:#afa4c4;
+  font-size:12px;
+}
+.wallet-overall-audit summary{
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;list-style:none;
+  color:#9ed8fa;font-size:12px;font-weight:750;
+  padding:4px 0;
+}
+.wallet-overall-audit summary::-webkit-details-marker{display:none}
+.wallet-overall-audit summary::before{content:"▸";font-size:11px}
+.wallet-overall-audit[open] summary::before{content:"▾"}
+.wallet-overall-audit-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:11px 14px;
+  padding:15px 0 12px;
+  font-size:12px;
+}
+.wallet-overall-audit-grid strong{
+  font-family:var(--sentinel-data);
+  font-variant-numeric:tabular-nums;
+  font-size:12px;font-weight:800;
+  white-space:nowrap;
+  text-align:right;
+  color:#e5daef;
+}
+.wallet-overall-audit small{display:block;line-height:1.55;font-size:10px}
+.wallet-overall-audit summary:focus-visible{outline:2px solid #70d1f7;outline-offset:3px}
+@media(max-width:600px){
+  .wallet-overall-audit-grid{gap:9px 8px}
+  .wallet-overall-audit-grid strong{font-size:11px}
+}
