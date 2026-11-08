@@ -4,6 +4,11 @@ import { calculatePnl } from "./pnl/calculate";
 
 export type OverallWalletPnl = {
   realizedEth: string | null;
+  grossProfitsEth: string;
+  grossLossesEth: string;
+  netReconciled: boolean;
+  wins: number;
+  losses: number;
   matchedSales: number;
   unknownBasisSales: number;
   estimatedSales: number;
@@ -28,8 +33,21 @@ export function summarizeOverallWalletPnl(
     ? events.filter(e => e.wallet.toLowerCase() === address.toLowerCase())
     : [...events];
   const summary = calculatePnl(scoped);
-  const matchedSales = summary.trades.filter(trade =>
-    trade.type === "sell" && trade.realizedEth !== null).length;
+  const matchedTrades = summary.trades.filter(trade =>
+    trade.type === "sell" && trade.realizedEth !== null);
+  const matchedSales = matchedTrades.length;
+  // Audit independently from signed curated sale rows: gross wins minus gross losses.
+  // Never infer prices for missing-basis trades or unpriced chains.
+  const grossProfits = matchedTrades.reduce((sum, trade) => {
+    const pnl = new Decimal(trade.realizedEth!);
+    return pnl.gt(0) ? sum.plus(pnl) : sum;
+  }, new Decimal(0));
+  const grossLosses = matchedTrades.reduce((sum, trade) => {
+    const pnl = new Decimal(trade.realizedEth!);
+    return pnl.lt(0) ? sum.plus(pnl.negated()) : sum;
+  }, new Decimal(0));
+  const net = grossProfits.minus(grossLosses);
+  const netReconciled = net.eq(summary.realizedEth);
   const perChain: OverallWalletPnl["perChain"] = [];
   for (const chain of ["ethereum", "base", "arbitrum", "robinhood"] as const) {
     const chainEvents = scoped.filter(e => e.chain === chain);
@@ -45,7 +63,13 @@ export function summarizeOverallWalletPnl(
   // Use exactly the curated source calculation (same as per-collection cards).
   // No extra price/fee inference or recomputation in the share-card renderer.
   return {
-    realizedEth: matchedSales ? new Decimal(summary.realizedEth).toFixed(8) : null,
+    // If the independent audit differs from the ledger, refuse to publish a misleading total.
+    realizedEth: matchedSales && netReconciled ? net.toFixed(8) : null,
+    grossProfitsEth: grossProfits.toFixed(8),
+    grossLossesEth: grossLosses.toFixed(8),
+    netReconciled,
+    wins: summary.wins,
+    losses: summary.losses,
     matchedSales,
     unknownBasisSales: summary.unknownBasisSales,
     estimatedSales: summary.estimatedSales,
