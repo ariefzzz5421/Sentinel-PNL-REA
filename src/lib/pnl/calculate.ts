@@ -63,7 +63,14 @@ export function calculatePnl(events: TradeEvent[], from?: Date): PnlSummary {
       unknown: number;
     }
   >();
-  const sorted = [...events].sort(
+  // One normalized provider event must not be counted twice if two scan
+  // pages or aggregation paths contain the same stable event ID.
+  const unique = new Map<string, TradeEvent>();
+  for (const event of events) {
+    const identity = event.chain + ":" + event.wallet.toLowerCase() + ":" + event.id;
+    if (!unique.has(identity)) unique.set(identity, event);
+  }
+  const sorted = [...unique.values()].sort(
     (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
   );
   const result: CalculatedTrade[] = [];
