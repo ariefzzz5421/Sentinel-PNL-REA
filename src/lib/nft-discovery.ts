@@ -4,6 +4,7 @@ import { addressSchema } from "./schema";
 import { getMatchedSolPnl, type MatchedSolPnl } from "./solana-pnl";
 import { scanBitcoinOrdinals, BitcoinProviderError } from "./bitcoin-ordinals";
 import type { BitcoinPnl } from "./bitcoin-pnl";
+import { scanExplorerEvm, ExplorerEvmError } from "./explorer-evm";
 
 export type DiscoveryAsset = {
   id: string; name: string; imageUrl: string | null; url: string;
