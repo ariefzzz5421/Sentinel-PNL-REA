@@ -3,20 +3,19 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CircleHelp, FileInput, ScanSearch } from "lucide-react";
-import { addressSchema, eventsSchema, type Chain, type TradeEvent } from "@/lib/schema";
-import { scanChains, scanChainById, type ScanChain } from "@/lib/scan-chains";
+import { addressSchema, eventsSchema, type TradeEvent } from "@/lib/schema";
+import { autoEvmChains, detectAutomaticWalletFamily, scanAllEvmNetworks, type AutoScanNetworkStatus } from "@/lib/automatic-scan";
+import { scanChains } from "@/lib/scan-chains";
 import { resolveWalletInput } from "@/lib/resolve-wallet-input";
 import { WalletConnectControl } from "@/components/wallet-connect-control";
 import { ScanResults, type PublicHolding } from "@/components/scan-results";
 import { MarketTape } from "@/components/market-tape";
 import { DiscoveryResults } from "@/components/discovery-results";
 import type { DiscoveryResult } from "@/lib/nft-discovery";
-import { detectNonEvmWallet } from "@/lib/discovery-wallet";
 
 const STORE = "sentinel-pnl-events-v1";
 export function ScannerHome() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [chain, setChain] = useState<ScanChain>("ethereum");
   const [wallets, setWallets] = useState("");
   const [contract, setContract] = useState("");
   const [busy, setBusy] = useState(false);
@@ -24,6 +23,8 @@ export function ScannerHome() {
   const [error, setError] = useState(false);
   const [resultEvents, setResultEvents] = useState<TradeEvent[] | null>(null);
   const [discovery, setDiscovery] = useState<DiscoveryResult | null>(null);
+  const [inkDiscovery, setInkDiscovery] = useState<DiscoveryResult | null>(null);
+  const [networkStatuses, setNetworkStatuses] = useState<AutoScanNetworkStatus[]>([]);
   const [resultHoldings, setResultHoldings] = useState<PublicHolding[]>([]);
   const [holdingsComplete, setHoldingsComplete] = useState(false);
   const [resultAddress, setResultAddress] = useState<string | null>(null);
@@ -43,113 +44,146 @@ export function ScannerHome() {
     finally { if (fileRef.current) fileRef.current.value = ""; }
   }
   async function scan(mode: "wallet" | "contract" | "bot") {
-    let addresses: string[];
-    let resolutionNote = "";
     setResultEvents(null);
     setDiscovery(null);
+    setInkDiscovery(null);
+    setNetworkStatuses([]);
     setResultHoldings([]);
     setHoldingsComplete(false);
     setResultAddress(null);
     setResultWarning("");
     const pasted = wallets.trim();
-    const detected = mode === "wallet" && !/[\s,;]/.test(pasted) ? detectNonEvmWallet(pasted) : null;
-    const target: ScanChain = detected || chain;
-    if (detected && target !== chain) setChain(target);
-    const selected = scanChainById(target);
-    if ("discoveryReady" in selected && selected.discoveryReady) {
-      if (mode !== "wallet" && target !== "ink") {
-        setMessage("Contract-filtered or bot PnL is not yet supported on this network. Use Scan for holdings discovery.");
-        setError(true); return;
-      }
-      if (mode === "bot") {
-        setMessage("Bot PnL is not yet available for Ink."); setError(true); return;
-      }
-      if (pasted.split(/[\s,;]+/).filter(Boolean).length !== 1) {
-        setMessage("NFT Discovery accepts one public wallet address at a time."); setError(true); return;
-      }
-      setBusy(true); setError(false); setMessage("Reading public NFT data from " + target + "…");
-      try {
-        const response = await fetch("/api/nft-discovery", {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ chain: target, address: pasted, contract: target === "ink" ? contract.trim() : undefined }),
-        });
-        const data = await response.json() as DiscoveryResult & { error?: string };
-        if (!response.ok) throw new Error(data.error || "NFT discovery failed.");
-        if (!Array.isArray(data.assets) || typeof data.pnlAvailable !== "boolean") throw new Error("Unexpected provider response.");
-        setDiscovery(data);
-        setMessage("Scan completed.");
-      } catch (cause) {
-        setMessage(cause instanceof Error ? cause.message : "NFT discovery failed."); setError(true);
-      } finally { setBusy(false); }
-      return;
-    }
-    if (!selected.scanReady) {
-      setMessage(selected.unavailableReason);
+    let walletFamily: ReturnType<typeof detectAutomaticWalletFamily>;
+    try { walletFamily = detectAutomaticWalletFamily(pasted); }
+    catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Invalid wallet address.");
       setError(true);
       return;
     }
-    setBusy(true); setError(false); setMessage("Resolving wallet inputs…");
-    try {
-      const resolved = await resolveWalletInput(wallets, target);
-      addresses = resolved.addresses;
-      resolutionNote = resolved.description;
-      if (mode !== "wallet" && !addressSchema.safeParse(contract).success)
-        throw new Error("Enter a valid collection contract address.");
-    } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Invalid wallet."); setError(true); setBusy(false); return; }
-    setMessage(`${resolutionNote} Scanning ${addresses.length} wallet(s) on ${target}…`.trim());
-    try {
-      const gathered: TradeEvent[] = [];
-      const warnings: string[] = [];
-      const failures: string[] = [];
-      let partial = false;
-      for (let offset = 0; offset < addresses.length; offset += 4) {
-        const results = await Promise.all(addresses.slice(offset, offset + 4).map(async (address) => {
-          const response = await fetch("/api/scan", {
-            method: "POST", headers: { "content-type": "application/json" },
-            body: JSON.stringify({ address, chain: target as Chain, mode, contract: mode === "wallet" ? undefined : contract.trim() }),
-          });
-          const data: unknown = await response.json();
-          if (!response.ok) throw new Error(data && typeof data === "object" && "error" in data ? String(data.error) : "Scan failed.");
-          const result = data as { events: unknown; partial?: boolean; warning?: string };
-          return { events: eventsSchema.parse(result.events), partial: Boolean(result.partial), warning: result.warning };
-        }).map((promise) => promise.catch((cause) => ({ error: cause instanceof Error ? cause.message : "Scan failed." }))));
-        for (const result of results) {
-          if ("error" in result) failures.push(result.error);
-          else { gathered.push(...result.events); partial ||= result.partial; if (result.warning) warnings.push(result.warning); }
-        }
+
+    // A BTC/SOL address cannot be derived from a 0x address. Detect the
+    // address family automatically without requiring the decorative chain bar.
+    if (walletFamily.kind === "discovery") {
+      if (mode !== "wallet") {
+        setMessage("Use Scan for Bitcoin or Solana wallet discovery. Contract and Bot PnL scans require EVM addresses.");
+        setError(true); return;
       }
-      if (failures.length === addresses.length) throw new Error(failures[0]);
-      const prior = eventsSchema.safeParse(JSON.parse(localStorage.getItem(STORE) || "[]"));
-      const merged = new Map((prior.success ? prior.data : []).map((event) => [event.id, event]));
-      for (const event of gathered) merged.set(event.id, event);
-      if (merged.size > 10_000) throw new Error("Ledger exceeds 10,000 events. Export a CSV from the dashboard first.");
-      localStorage.setItem(STORE, JSON.stringify([...merged.values()]));
-      sessionStorage.setItem("sentinel-pnl-scan-status-v1", JSON.stringify({ partial: partial || failures.length > 0, warning: [resolutionNote, ...warnings, ...failures].join(" ") }));
+      setBusy(true); setError(false);
+      setMessage("Reading public NFT data from " + walletFamily.chain + "…");
+      try {
+        const response = await fetch("/api/nft-discovery", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chain: walletFamily.chain, address: walletFamily.address }),
+        });
+        const data = await response.json() as DiscoveryResult & { error?: string };
+        if (!response.ok) throw new Error(data.error || "NFT discovery failed.");
+        if (!Array.isArray(data.assets) || typeof data.pnlAvailable !== "boolean")
+          throw new Error("Unexpected NFT discovery response.");
+        setDiscovery(data);
+        setMessage("Discovery completed.");
+      } catch (cause) {
+        setMessage(cause instanceof Error ? cause.message : "NFT discovery failed.");
+        setError(true);
+      } finally { setBusy(false); }
+      return;
+    }
+
+    setBusy(true); setError(false); setMessage("Resolving EVM wallet inputs…");
+    try {
+      // Ethereum resolution is sufficient for the same 0x address on all
+      // supported EVM networks; do not resolve ENS separately on every chain.
+      const resolved = await resolveWalletInput(wallets, "ethereum");
+      const addresses = resolved.addresses;
+      const contractFilter = contract.trim();
+      if (mode !== "wallet" && !addressSchema.safeParse(contractFilter).success)
+        throw new Error("Enter a valid EVM collection contract address.");
+
+      setMessage("Scanning " + addresses.length + " wallet(s) across ETH, Base, ARB and RH…");
+      const scan = await scanAllEvmNetworks(addresses, mode,
+        mode === "wallet" ? undefined : contractFilter, fetch,
+        (complete, total) => setMessage("Scanning supported EVM networks… " + complete + "/" + total));
+      const warnings = [...scan.warnings];
+      let partial = scan.partial;
+
+      // Storage is optional for the live result; a storage failure should
+      // never hide a successful network scan from the user.
+      try {
+        const saved = localStorage.getItem(STORE);
+        const prior = eventsSchema.safeParse(JSON.parse(saved || "[]"));
+        const merged = new Map((prior.success ? prior.data : []).map(event => [event.id, event]));
+        for (const event of scan.events) merged.set(event.id, event);
+        if (merged.size > 10_000) throw new Error("Local ledger exceeds 10,000 events.");
+        localStorage.setItem(STORE, JSON.stringify([...merged.values()]));
+      } catch {
+        partial = true;
+        warnings.push("Local browser ledger could not be saved; current scan results are still displayed.");
+      }
+
       let holdings: PublicHolding[] = [];
-      let holdingsVerifiedComplete = false;
-      let holdingWarning = "";
+      let holdingsComplete = false;
       if (mode === "wallet" && addresses.length === 1) {
         try {
           const response = await fetch("/api/opensea/holdings?address=" + encodeURIComponent(addresses[0]));
           const payload: unknown = await response.json();
-          if (!response.ok) holdingWarning = "Holding data unavailable from OpenSea.";
-          else if (payload && typeof payload === "object" && "holdings" in payload && Array.isArray(payload.holdings)) {
-            holdings = payload.holdings as PublicHolding[];
-            holdingsVerifiedComplete = !("partial" in payload && payload.partial);
-            if (!holdingsVerifiedComplete) holdingWarning = "Holding list is incomplete.";
-          }
-        } catch { holdingWarning = "Holding data unavailable from OpenSea."; }
+          if (!response.ok) throw new Error("OpenSea holdings unavailable.");
+          if (payload && typeof payload === "object" && "holdings" in payload &&
+              Array.isArray(payload.holdings)) {
+            holdings = (payload.holdings as PublicHolding[])
+              .filter(item => autoEvmChains.some(chain => chain === item.chain) &&
+                addressSchema.safeParse(item.contract).success);
+            holdingsComplete = !("partial" in payload && payload.partial === true);
+            if (!holdingsComplete) throw new Error("Holdings list is incomplete.");
+          } else throw new Error("Holdings response is invalid.");
+        } catch {
+          partial = true;
+          warnings.push("OpenSea current holdings could not be fully verified.");
+        }
       }
-      setResultEvents(gathered);
+
+      // Ink has a read-only ERC-721 transfer adapter, but it cannot discover
+      // all wallet NFTs without a collection contract. Include it when the
+      // user supplies a valid contract, without inventing Ink PnL prices.
+      if (addresses.length === 1 && mode !== "bot" &&
+          addressSchema.safeParse(contractFilter).success) {
+        try {
+          const response = await fetch("/api/nft-discovery", {
+            method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ chain: "ink", address: addresses[0], contract: contractFilter }),
+          });
+          const data = await response.json() as DiscoveryResult & { error?: string };
+          if (!response.ok) throw new Error(data.error || "Ink transfer discovery unavailable.");
+          if (!Array.isArray(data.assets) || data.chain !== "ink")
+            throw new Error("Unexpected Ink discovery response.");
+          setInkDiscovery(data);
+        } catch (cause) {
+          partial = true;
+          warnings.push("INK: " + (cause instanceof Error ? cause.message : "Discovery failed."));
+        }
+      }
+
+      setNetworkStatuses(scan.statuses);
+      setResultEvents(scan.events);
       setResultHoldings(holdings);
-      setHoldingsComplete(holdingsVerifiedComplete);
+      setHoldingsComplete(holdingsComplete);
       setResultAddress(addresses.length === 1 ? addresses[0] : null);
-      setResultPartial(Boolean(partial || failures.length || holdingWarning));
-      setResultWarning([resolutionNote, ...warnings, ...failures, holdingWarning].filter(Boolean).join(" "));
-      setMessage([resolutionNote, "Scan finished:", gathered.length + "NFT events,", holdings.length + "owned collection records.", !gathered.length ? "No supported priced trades in the available history." : ""].filter(Boolean).join(" "));
-    } catch (cause) { const detail = cause instanceof Error ? cause.message : "Scan failed."; setMessage([resolutionNote, detail].filter(Boolean).join(" ")); setError(true); }
-    finally { setBusy(false); }
+      setResultPartial(partial);
+      const warning = [resolved.description, ...warnings].filter(Boolean).join(" ");
+      setResultWarning(warning);
+      try {
+        sessionStorage.setItem("sentinel-pnl-scan-status-v1",
+          JSON.stringify({ partial, warning }));
+      } catch { /* Scan results remain available even without session storage. */ }
+      setMessage((resolved.description ? resolved.description + " " : "") +
+        "Scan complete · " + scan.events.length + " NFT events across " +
+        scan.requestsSucceeded + "/" +
+        (scan.requestsSucceeded + scan.requestsFailed) + " successful network requests." +
+        (scan.requestsFailed ? " Some networks failed; see Details below." : ""));
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "EVM scan failed.");
+      setError(true);
+    } finally { setBusy(false); }
   }
+
   return <div className="scanner-page">
     <header className="scanner-header">
       <Link href="/" className="scanner-brand"><Image src="/sentinel-logo.svg" width={38} height={40} alt="Sentinel logo"/><span>SENTINEL PNL</span></Link>
@@ -163,9 +197,13 @@ export function ScannerHome() {
         <Link href="/methodology">PnL methodology <CircleHelp size={15}/></Link>
       </aside>
       <main className="scanner-main" id="scanner">
-        <div className="scanner-chains" role="group" aria-label="Blockchain">
-          {scanChains.map((item) => <button key={item.id} type="button" onClick={() => { setChain(item.id); setMessage(item.scanReady ? "" : item.unavailableReason); setError(false); setResultEvents(null); setDiscovery(null); }} aria-pressed={chain === item.id} className={chain === item.id ? "selected" : ""} title={item.scanReady ? `${item.label} NFT scan` : item.unavailableReason}><Image src={item.icon} width={19} height={19} alt=""/>{item.label}</button>)}
+        <div className="scanner-chains" role="img" aria-label="Network logos: Ethereum, Base, Arbitrum, Robinhood, Arc, Solana, Ink and Bitcoin. Network selection is automatic.">
+          {scanChains.map((item) => <span key={item.id} className="scanner-chain-display"
+            title={item.scanReady ? item.label + " scanned automatically for EVM addresses" : item.label + ": " + ("unavailableReason" in item ? item.unavailableReason : "Requires a matching address")}>
+            <Image src={item.icon} width={19} height={19} alt=""/>{item.label}
+          </span>)}
         </div>
+        <p className="scanner-network-note">Auto scan: ETH · Base · ARB · RH for 0x wallets. BTC/SOL detected by address. INK needs a contract; ARC is not supported yet.</p>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> SENTINEL ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
@@ -180,17 +218,18 @@ export function ScannerHome() {
             </div>
             <button className="scanner-submit" type="button" disabled={busy} onClick={() => void scan("wallet")}>{busy ? "Scanning…" : "Scan"}</button>
           </div>
-          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder={chain === "ink" ? "Ink ERC-721 contract required for recent transfers" : "Collection contract address (Scan Contract & Bot PNL)"}/>
+          <input className="scanner-contract" aria-label="Collection contract address" value={contract} onChange={(event) => setContract(event.target.value)} placeholder="Collection contract (optional for Ink, required for Contract / Bot PnL)"/>
           <div className="scanner-secondary-row">
             <button type="button" className="scanner-contract-btn" disabled={busy} onClick={() => void scan("contract")}>Scan Contract</button>
             <button type="button" className="scanner-bot-btn" disabled={busy} onClick={() => void scan("bot")}>Bot PNL</button>
           </div>
         </section>
         {message && (!discovery || error) && <p className={error ? "scanner-inline-status is-error" : "scanner-inline-status"} role={error ? "alert" : "status"}>
-          {error ? message : resultEvents === null ? message : "Scan complete · " + resultEvents.length + " NFT activity events. Tap any collection to view or share its PnL."}
+          {message}
         </p>}
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
-          ? <ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning}/>
+          ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning} networkStatuses={networkStatuses}/>
+            {inkDiscovery && <DiscoveryResults result={inkDiscovery}/>}</>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
       <aside className="scanner-side scanner-side-right" aria-label="How to use">
