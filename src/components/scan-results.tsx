@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Decimal from "decimal.js";
 import { ArrowUpRight, Download, Images, Info, Share2, X } from "lucide-react";
 import { PnlCardStudio, studioFontFamilies, type FontChoice } from "@/components/pnl-card-studio";
 import { calculatePnl, type CalculatedTrade } from "@/lib/pnl/calculate";
@@ -19,7 +20,7 @@ export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
   held: number | null; chain: string; contract: string;
 };
-type Filter = "recent" | "best" | "holding";
+type Filter = "recent" | "best" | "worst" | "holding";
 type CollectionRow = {
   key: string; name: string; chain: Chain; contract: string;
   image: string | null; bought: number; sold: number; minted: number; transfersIn: number; held: number | null;
@@ -59,7 +60,8 @@ function collectionRows(events: TradeEvent[], holdings: PublicHolding[], holding
     const first = eventsForCollection[0];
     if (!first && !holding) continue;
     const summary = calculatePnl(eventsForCollection);
-    const matched = summary.sells - summary.unknownBasisSales;
+    const matched = summary.trades.filter(trade =>
+      trade.type === "sell" && trade.realizedEth !== null).length;
     const latest = eventsForCollection.reduce((max, event) => event.date > max ? event.date : max, "");
     rows.push({
       key, name: holding?.name || first?.collection || key,
@@ -128,11 +130,14 @@ export function ScanResults({
     if (filter === "holding") return rows.filter((row) => row.held !== null && row.held > 0)
       .sort((a, b) => (b.held || 0) - (a.held || 0));
     if (filter === "best") return rows.filter((row) => row.pnl !== null)
-      .sort((a, b) => Number(b.pnl) - Number(a.pnl));
+      .sort((a, b) => new Decimal(b.pnl!).cmp(a.pnl!));
+    if (filter === "worst") return rows.filter((row) =>
+      row.pnl !== null && new Decimal(row.pnl).lt(0))
+      .sort((a, b) => new Decimal(a.pnl!).cmp(b.pnl!));
     return [...rows].sort((a, b) => b.latest.localeCompare(a.latest));
   }, [filter, rows]);
   const selected = rows.find((row) => row.key === activeKey) || null;
-  const indexedShown = filter === "best" && !unpricedChain ? [] :
+  const indexedShown = (filter === "best" || filter === "worst") && !unpricedChain ? [] :
     filter === "holding" && !unpricedChain
       ? indexedCollections.filter(row => row.owned > 0) : indexedCollections;
 
@@ -170,6 +175,7 @@ export function ScanResults({
     <div className="scan-result-tabs" role="group" aria-label="NFT collection filters">
       <button type="button" aria-pressed={filter === "recent"} className={filter === "recent" ? "active" : ""} onClick={() => setFilter("recent")}>Recent</button>
       <button type="button" aria-pressed={filter === "best"} className={filter === "best" ? "active" : ""} onClick={() => setFilter("best")}>Best PNL</button>
+      <button type="button" aria-pressed={filter === "worst"} className={filter === "worst" ? "active" : ""} onClick={() => setFilter("worst")}>Worst PNL</button>
       <button type="button" aria-pressed={filter === "holding"} className={filter === "holding" ? "active" : ""} onClick={() => setFilter("holding")}>Holding</button>
       <span className="scan-result-total">{rows.length + indexedCollections.length} collections</span>
       <button type="button" onClick={() => downloadCsv(shown)} className="scan-results-export"><Download size={16}/> CSV</button>
@@ -206,6 +212,7 @@ export function ScanResults({
         </button>
       </article>)}
     </div> : indexedShown.length === 0 && <div className="scan-results-empty"><Info size={20}/><p>{filter === "best" ? "No matched sales to rank in the available data." :
+      filter === "worst" ? "No verified negative realized PnL found in the available matched sales." :
       filter === "holding" ? "No current owned collections returned by OpenSea." : "No supported priced NFT trades found."}</p></div>}
     </>}
     <IndexedEvmCollectionCards rows={indexedShown}/>
