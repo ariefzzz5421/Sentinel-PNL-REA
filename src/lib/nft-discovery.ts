@@ -202,5 +202,13 @@ async function ink(input: Input, fetcher: typeof fetch): Promise<DiscoveryResult
 export async function discoverNfts(input: Input, fetcher: typeof fetch = fetch): Promise<DiscoveryResult> {
   if (input.chain === "solana") return helius(input, fetcher);
   if (input.chain === "bitcoin") return ordiscan(input, fetcher);
-  return ink(input, fetcher);
+  if (input.chain === "ink" || input.chain === "arc") {
+    if (input.chain === "ink" && input.contract) return ink(input, fetcher);
+    try { return await scanExplorerEvm(input.chain, input.address, input.contract, fetcher); }
+    catch (error) {
+      if (error instanceof ExplorerEvmError) throw new DiscoveryError(error.message, error.status);
+      throw error;
+    }
+  }
+  throw new DiscoveryError("Unsupported network.", 400);
 }
