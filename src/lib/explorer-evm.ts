@@ -164,7 +164,7 @@ function heldAsset(raw: unknown, wallet: string, origin: string,
   const kind = standard(token?.type);
   const id = tokenId(item?.id);
   if (!item || !contract || !kind || !id ||
-      (contractFilter && contract !== contract)) return null;
+      (contractFilter && contract !== contractFilter)) return null;
   const actualOwner = item.owner === undefined || item.owner === null ? null : address(item.owner);
   if (actualOwner && actualOwner !== wallet) return null;
   const metadata = object(item.metadata);
