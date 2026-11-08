@@ -189,7 +189,7 @@ export function ScanResults({
               : <div className="scan-collection-image scan-collection-placeholder"><Images size={24}/></div>}
             <div className="scan-collection-title"><strong>{row.name}</strong><span className="scan-collection-chain"><Image src={scanChainById(row.chain).icon} width={17} height={17} alt="" aria-hidden="true"/>{row.chain.toUpperCase()}</span></div>
             <div className="scan-collection-pnl" title={ethUsdSpot
-              ? "USD converted at current CoinGecko ETH spot (" + ethUsdSpot.updatedAt + "), not the historical trade rate."
+              ? "USD converted at current " + ethUsdSpot.source + " ETH spot (" + ethUsdSpot.updatedAt + "), not the historical trade rate."
               : "Live ETH/USD rate unavailable; no USD value inferred."}>
               <strong className={row.pnl === null ? "unknown" : Number(row.pnl) >= 0 ? "positive" : "negative"}>
                 <span className="scan-pnl-native">{formatEth(row.pnl)}</span>
