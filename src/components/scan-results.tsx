@@ -13,6 +13,7 @@ import type { DiscoveryResult } from "@/lib/nft-discovery";
 import { groupIndexedEvmCollections } from "@/lib/indexed-evm-collections";
 import { IndexedEvmCollectionCards } from "@/components/indexed-evm-collection-cards";
 import { parseEthUsdSpot, formatEthPnlUsd, type EthUsdSpot } from "@/lib/eth-usd-spot";
+import { WalletOverallCard } from "@/components/wallet-overall-card";
 
 export type PublicHolding = {
   name: string; slug: string; imageUrl: string | null;
@@ -145,6 +146,7 @@ export function ScanResults({
   }, [activeKey]);
 
   return <section className="scan-results" aria-label={partial ? "NFT collection scan results; history may be incomplete" : "NFT collection scan results"}>
+    <WalletOverallCard events={events} wallet={address} partial={partial} spot={ethUsdSpot}/>
     {networkStatuses.length > 0 && <div className="scan-network-status" role="group" aria-label="Filter results by EVM network">
       <button type="button" className={"scan-network-filter-all" + (selectedChain === null ? " active" : "")}
         aria-pressed={selectedChain === null} onClick={() => { setActiveKey(null); setFilter("recent"); onChainSelect?.(null); }}>
@@ -185,9 +187,9 @@ export function ScanResults({
               ? "USD converted at current CoinGecko ETH spot (" + ethUsdSpot.updatedAt + "), not the historical trade rate."
               : "Live ETH/USD rate unavailable; no USD value inferred."}>
               <strong className={row.pnl === null ? "unknown" : Number(row.pnl) >= 0 ? "positive" : "negative"}>
-                {formatEth(row.pnl)}
+                <span className="scan-pnl-native">{formatEth(row.pnl)}</span>
                 {row.pnl !== null && <span className="scan-pnl-usd">
-                  {" (" + (formatEthPnlUsd(row.pnl, ethUsdSpot) ?? "—") + ")"}
+                  {"(" + (formatEthPnlUsd(row.pnl, ethUsdSpot) ?? "—") + ")"}
                 </span>}
               </strong>
               <small>ETH PNL</small>
