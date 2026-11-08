@@ -41,13 +41,14 @@ export function MarketTape() {
   const known = new Map(snapshot?.assets.map((asset) => [asset.symbol, asset]) || []);
   const assets = marketSymbols.map((symbol) => known.get(symbol) || null);
 
-  function Cell({ asset, symbol }: { asset: MarketAsset | null; symbol: MarketSymbol }) {
+  function Cell({ asset, symbol, repeated = false }: { asset: MarketAsset | null; symbol: MarketSymbol; repeated?: boolean }) {
     const change = asset?.change24h;
     const iconSrc = symbol === "SOL" ? "/chains/solana.svg" : asset?.image;
     return <a href={coinLinks[symbol]} target="_blank" rel="noopener noreferrer"
-      className="tape-asset" aria-label={symbol + " market data from CoinGecko"}>
+      className="tape-asset" tabIndex={repeated ? -1 : undefined}
+      aria-label={symbol + " market data from CoinGecko"}>
       {iconSrc
-        ? <Image unoptimized src={iconSrc} width={22} height={22} alt="" className="tape-icon"/>
+        ? <Image unoptimized src={iconSrc} width={22} height={22} alt="" className={symbol === "SOL" ? "tape-icon tape-icon-solana" : "tape-icon"}/>
         : <span className={"tape-icon tape-fallback coin-" + symbol.toLowerCase()}>{symbol.slice(0, 1)}</span>}
       <strong>{symbol}</strong>
       <span className="tape-price">{asset ? money(asset.usd) : "—"}</span>
@@ -61,7 +62,7 @@ export function MarketTape() {
     <div className="tape-window">
       <div className="tape-track">
         <div className="tape-set">{assets.map((asset, i) => <Cell key={marketSymbols[i]} asset={asset} symbol={marketSymbols[i]}/>)}</div>
-        <div className="tape-set" aria-hidden="true">{assets.map((asset, i) => <Cell key={"duplicate-" + marketSymbols[i]} asset={asset} symbol={marketSymbols[i]}/>)}</div>
+        <div className="tape-set" aria-hidden="true">{assets.map((asset, i) => <Cell key={"duplicate-" + marketSymbols[i]} asset={asset} symbol={marketSymbols[i]} repeated/>)}</div>
       </div>
     </div>
     <span className="visually-hidden" role="status">
