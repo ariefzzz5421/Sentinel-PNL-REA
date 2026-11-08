@@ -29,7 +29,6 @@ export function ScannerHome() {
   const [holdingsComplete, setHoldingsComplete] = useState(false);
   const [resultAddress, setResultAddress] = useState<string | null>(null);
   const [resultPartial, setResultPartial] = useState(false);
-  const [resultWarning, setResultWarning] = useState("");
   async function loadWallets(file?: File) {
     if (!file) return;
     try {
@@ -51,7 +50,6 @@ export function ScannerHome() {
     setResultHoldings([]);
     setHoldingsComplete(false);
     setResultAddress(null);
-    setResultWarning("");
     const pasted = wallets.trim();
     let walletFamily: ReturnType<typeof detectAutomaticWalletFamily>;
     try { walletFamily = detectAutomaticWalletFamily(pasted); }
@@ -148,18 +146,15 @@ export function ScannerHome() {
       setResultAddress(addresses.length === 1 ? addresses[0] : null);
       setResultPartial(partial);
       const warning = [resolved.description, ...warnings].filter(Boolean).join(" ");
-      setResultWarning(warning);
       try {
         sessionStorage.setItem("sentinel-pnl-scan-status-v1",
           JSON.stringify({ partial, warning }));
       } catch { /* Scan results remain available even without session storage. */ }
-      setMessage((resolved.description ? resolved.description + " " : "") +
-        "Scan complete · " + scan.events.length + " priced EVM NFT events, " +
-        scan.discoveries.reduce((count, item) => count + item.assets.length, 0) +
-        " Arc/Ink indexed holdings and transfers across " +
-        scan.requestsSucceeded + "/" +
-        (scan.requestsSucceeded + scan.requestsFailed) + " successful network requests." +
-        (scan.requestsFailed ? " Some networks failed; see Details below." : ""));
+      // Keep diagnostics in session storage and the individual network statuses;
+      // the post-scan headline only reports successfully resolved ENS names.
+      setMessage(resolved.ensCount > 0
+        ? "Found " + resolved.ensCount + " ENS Address" + (resolved.ensCount === 1 ? "" : "es")
+        : "");
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : "EVM scan failed.");
       setError(true);
@@ -186,7 +181,6 @@ export function ScannerHome() {
             <Image src={item.icon} width={19} height={19} alt=""/>{item.label}
           </span>)}
         </div>
-        <p className="scanner-network-note">Auto scan for 0x wallets: ETH · Base · ARB · RH · ARC · INK. BTC/SOL detected from their own address formats; Arc/Ink price history may be Unknown.</p>
         <MarketTape/>
         <div className="scanner-intro"><div className="scanner-kicker"><span className="signal-dot"/> SENTINEL ANALYSIS</div>
           <h1>Track your NFT <em>performance</em></h1>
@@ -211,7 +205,7 @@ export function ScannerHome() {
           {message}
         </p>}
         {discovery ? <DiscoveryResults result={discovery}/> : resultEvents !== null
-          ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} warning={resultWarning} networkStatuses={networkStatuses}/>
+          ? <><ScanResults events={resultEvents} holdings={resultHoldings} holdingsComplete={holdingsComplete} address={resultAddress} partial={resultPartial} networkStatuses={networkStatuses}/>
             {evmDiscoveries.map(result => <DiscoveryResults key={result.chain + ":" + result.address} result={result}/>) }</>
           : !message && <div className="scanner-empty"><ScanSearch size={33}/><strong>Nothing here yet.</strong><span>Paste a wallet above and run <b>Scan</b></span></div>}
       </main>
