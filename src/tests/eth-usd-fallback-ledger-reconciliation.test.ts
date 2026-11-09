@@ -120,7 +120,7 @@ describe("Audit net realized profits after all matched losses and known fees", (
 
   it("keeps a collapsed proof of reconciliation with no extra PNG metrics", () => {
     const card = readFileSync(join(process.cwd(), "src/components/wallet-overall-card.tsx"), "utf8");
-    expect(card).toContain('<details className="wallet-overall-audit">');
+    expect(card).toContain('<details className="wallet-overall-audit"');
     expect(card).toContain("summary.grossProfitsEth");
     expect(card).toContain("summary.grossLossesEth");
     expect(card).toContain("summary.netReconciled");
