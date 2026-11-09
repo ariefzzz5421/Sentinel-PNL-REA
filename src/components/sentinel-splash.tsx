@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 /** Session scoped: don't interrupt navigation or repeated NFT scans with an intro. */
-const STORAGE_KEY = "sentinel-intro-seen-v1";
-const INTRO_MS = 1260;
-const OUTRO_MS = 440;
+const STORAGE_KEY = "sentinel-intro-seen-v2";
+const INTRO_MS = 1430;
+const OUTRO_MS = 520;
 
 type SplashPhase = "enter" | "leave" | "hidden";
 
@@ -17,6 +17,7 @@ function markIntroSeen() {
 
 export function SentinelSplash() {
   // Render intro in the initial HTML to avoid flashing the app before hydration.
+  // Automatically exits after ~2 seconds; it has no manual Skip button.
   const [phase, setPhase] = useState<SplashPhase>("enter");
 
   useEffect(() => {
@@ -58,8 +59,8 @@ export function SentinelSplash() {
           <Image
             src="/sentinel-logo.svg"
             alt="Sentinel eye logo"
-            width={96}
-            height={100}
+            width={174}
+            height={174}
             priority
             unoptimized
           />
@@ -68,14 +69,6 @@ export function SentinelSplash() {
         <span className="sentinel-splash__tagline">NFT INTELLIGENCE</span>
         <span className="sentinel-splash__scanline" aria-hidden="true" />
       </div>
-      <button
-        className="sentinel-splash__skip"
-        type="button"
-        onClick={() => { markIntroSeen(); setPhase("hidden"); }}
-        aria-label="Skip Sentinel introduction"
-      >
-        Skip intro <span aria-hidden="true">→</span>
-      </button>
     </div>
   );
 }
