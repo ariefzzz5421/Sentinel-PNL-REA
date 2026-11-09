@@ -2918,3 +2918,54 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
     transition: none !important;
   }
 }
+
+
+/* Overall PnL summary: comfortable mobile tap target, balanced icon/text spacing. */
+.wallet-overall-actions {
+  grid-column: 1 / -1;
+  margin: 8px 0 6px;
+}
+.wallet-overall-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 58px;
+  padding: 14px 19px;
+  border-radius: 12px;
+  text-align: left;
+  line-height: 1.35;
+}
+.wallet-overall-action-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 13px;
+}
+.wallet-overall-action-label > svg,
+.wallet-overall-actions button > svg {
+  flex-shrink: 0;
+}
+.wallet-overall-actions button > svg:last-child {
+  margin-left: auto;
+}
+.wallet-overall-audit {
+  padding-top: 14px;
+}
+.wallet-overall-audit-grid {
+  padding-bottom: 0;
+}
+@media (max-width: 600px) {
+  .wallet-overall-actions {
+    margin: 8px 0 5px;
+  }
+  .wallet-overall-actions button {
+    min-height: 56px;
+    padding: 13px 17px;
+    font-size: 13px;
+    gap: 14px;
+  }
+  .wallet-overall-action-label {
+    gap: 12px;
+  }
+}
