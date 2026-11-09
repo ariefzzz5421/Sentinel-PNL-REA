@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Sentinel PNL — Track Every Move. Know Your Edge.",
   description:
     "Private-first NFT trading PnL workspace with transparent cost basis and optional live data providers.",
-  icons: { icon: "/sentinel-logo.svg", apple: "/sentinel-logo.svg" },
+  icons: { icon: "/sentinel-logo.svg?v=2", apple: "/sentinel-logo.svg?v=2" },
 };
 export default function RootLayout({
   children,
