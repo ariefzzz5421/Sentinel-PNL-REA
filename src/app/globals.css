@@ -2794,11 +2794,11 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
 }
 .sentinel-splash__orbit {
   position: absolute;
-  width: 264px;
-  height: 264px;
-  top: 8px;
+  width: 224px;
+  height: 224px;
+  top: 20px;
   left: 50%;
-  margin-left: -132px;
+  margin-left: -112px;
   border: 1px solid rgba(166,119,255,.28);
   border-radius: 50%;
   box-shadow: 0 0 34px rgba(105,66,198,.08), inset 0 0 22px rgba(107,67,204,.08);
@@ -2905,9 +2905,9 @@ body,button,input,textarea,select{font-family:var(--sentinel-ui)}
   to { opacity: 1; transform: scale(1); }
 }
 @media (max-width: 480px) {
-  .sentinel-splash__stage { min-height: 370px; }
-  .sentinel-splash__orbit { width: 248px; height: 248px; margin-left: -124px; top: 8px; }
-  .sentinel-splash__emblem { width: 180px; height: 180px; }
+  .sentinel-splash__stage { min-height: 388px; }
+  .sentinel-splash__orbit { width: 224px; height: 224px; margin-left: -112px; top: 20px; }
+  .sentinel-splash__emblem { width: 188px; height: 188px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sentinel-splash,
